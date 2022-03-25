@@ -1,0 +1,12 @@
+attrs==21.4.0
+greenlet==1.1.2
+iniconfig==1.1.1
+packaging==21.3
+pluggy==1.0.0
+py==1.11.0
+pyparsing==3.0.7
+pytest==7.1.1
+SQLAlchemy==1.4.32
+sqlparse==0.4.2
+tabulate==0.8.9
+tomli==2.0.1
