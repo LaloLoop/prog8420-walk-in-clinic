@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -141,16 +142,7 @@ def _create_test_appointment(session, staff: Employee, patient: Patient, employe
     return appointment
 
 
-def _create_session():
-    engine = create_engine('sqlite:///:memory:', echo=True)
-    Base.metadata.create_all(engine)
-
-    Session = sessionmaker(bind=engine)
-    return Session()
-
-
-def test_create_person():
-    session = _create_session()
+def test_create_person(session):
 
     _create_test_person(session)
 
@@ -162,8 +154,7 @@ def test_create_person():
         assert result.__dict__.get(k) == v
 
 
-def test_create_job():
-    session = _create_session()
+def test_create_job(session):
 
     _create_test_job(session)
 
@@ -174,8 +165,7 @@ def test_create_job():
     assert result.speciality == "Neurologist"
 
 
-def test_create_employee():
-    session = _create_session()
+def test_create_employee(session):
 
     person = _create_test_person(session)
     job = _create_test_job(session)
@@ -192,8 +182,7 @@ def test_create_employee():
     assert result.job.speciality == job.speciality
 
 
-def test_create_patient():
-    session = _create_session()
+def test_create_patient(session):
 
     person = _create_test_person(session)
     _create_test_patient(session, person)
@@ -206,8 +195,7 @@ def test_create_patient():
     assert result.person.first_name == person.first_name
 
 
-def test_create_prescription():
-    session = _create_session()
+def test_create_prescription(session):
 
     unit = _create_test_unit(session, "mg")
 
@@ -221,8 +209,7 @@ def test_create_prescription():
     assert result.unit.id == unit.id
 
 
-def test_create_appointment():
-    session = _create_session()
+def test_create_appointment(session):
 
     person = _create_test_person(session)
     job = _create_test_job(session)
@@ -254,8 +241,7 @@ def test_create_appointment():
     assert result.prescription.id == prescription.id
 
 
-def test_create_unit():
-    session = _create_session()
+def test_create_unit(session):
 
     _create_test_unit(session, "mg")
 
