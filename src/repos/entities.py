@@ -75,8 +75,8 @@ class Appointment(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     doctor_id = Column(Integer, ForeignKey('Employee.id'))
-    staff_id = Column(Integer, ForeignKey('Employee.id'))
     patient_id = Column(Integer, ForeignKey('Patient.id'))
+    staff_id = Column(Integer, ForeignKey('Employee.id'))
     prescription_id = Column(Integer, ForeignKey('Prescription.id'))
     date = Column(DateTime)
     comments = Column(String)

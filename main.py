@@ -14,6 +14,8 @@ def main():
     controller = Controller(engine)
     controller.init_db()
 
+
+
     last_scene = None
     while True:
         try:

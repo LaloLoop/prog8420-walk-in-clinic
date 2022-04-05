@@ -2,7 +2,7 @@ from sqlalchemy.engine.mock import MockConnection
 from sqlalchemy.orm import sessionmaker
 
 from src.repos.entities import Base, Person, Employee, Job
-
+from src.repos.seed_db import seed_db 
 
 class Controller:
     def __init__(self, engine: MockConnection):
@@ -21,9 +21,12 @@ class Controller:
             self.session.commit()
 
     def init_db(self):
+        
         Base.metadata.create_all(self.engine)
 
-        self._init_admin()
+        seed_db(session=self.session)
+
+        # self._init_admin()
 
     def login(self, login_data: dict):
         employee = self.session.query(Employee).join(Person).join(Job). \
