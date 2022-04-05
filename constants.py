@@ -3,7 +3,7 @@ from datetime import timedelta
 import math
 from pathlib import Path
 from openpyxl import load_workbook
-from src.repos.entities import Appointment,Employee, Job
+from src.repos.models import Appointment,Employee, Job
 
 OPENING_HOUR_TIME_DELTA = timedelta(hours=8)
 
