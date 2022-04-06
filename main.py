@@ -1,12 +1,17 @@
 from typing import List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy.orm import Session
 
-import crud, models, schemas, seed_db
+import crud, models, schemas
+
 from database import SessionLocal, engine
+from seed_db import seed_database
+import constants as cs
 
 models.Base.metadata.create_all(bind=engine)
+
+seed_database()
 
 app = FastAPI()
 
@@ -18,26 +23,28 @@ def get_db():
     finally:
         db.close()
 
-seed_db(session= Depends(get_db))
+@app.get("/")
+async def root():
+    return {"message": "Go to <base_url>/docs to see the Swagger Page"}
 
 @app.get("/persons/", response_model=List[schemas.Person])
 def read_persons(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    persons = crud.get_persons(db, skip=skip, limit=limit)
-    if persons is None:
+    db_persons = crud.read_persons(db, skip=skip, limit=limit)
+    if db_persons is None:
         raise HTTPException(status_code=404, detail="Persons not found")
-    return persons
+    return db_persons
 
 @app.get("/person/{person_id}", response_model=schemas.Person)
-def get_person(person_id: int, db: Session = Depends(get_db)):
-    db_person = crud.get_person(db, person_id=person_id)
+def read_person(person_id: int, db: Session = Depends(get_db)):
+    db_person = crud.read_person(db, person_id=person_id)
     if db_person is None:
         raise HTTPException(status_code=404, detail="Person not found")
     return db_person
 
-@app.post("/person/", response_model=schemas.Person)
+@app.post("/person/", response_model=schemas.Person, status_code=status.HTTP_201_CREATED)
 def create_person(person: schemas.PersonCreate, db: Session = Depends(get_db)):
-    person = crud.get_person_by_email(db, person.email)
-    if person:
+    db_person = crud.read_person_by_email(db, person.email)
+    if db_person is not None:
         raise HTTPException(status_code=400, detail="Person with this email already exists")
     return crud.create_person(db=db, person=person)
 
@@ -50,20 +57,20 @@ def delete_person(person_id: int, db: Session = Depends(get_db)):
     return crud.delete_person(db=db, person_id=person_id)
 
 @app.get("/jobs/", response_model=List[schemas.Job])
-def get_jobs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    jobs = crud.get_jobs(db, skip=skip, limit=limit)
-    if jobs is None:
+def read_jobs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    db_jobs = crud.read_jobs(db, skip=skip, limit=limit)
+    if db_jobs is None:
         raise HTTPException(status_code=404, detail="Jobs not found")
-    return jobs
+    return db_jobs
 
 @app.get("/job/{job_id}", response_model=schemas.Job)
-def get_job(job_id: int, db: Session = Depends(get_db)):
-    job = crud.get_job(db, job_id=job_id)
-    if job is None:
+def read_job(job_id: int, db: Session = Depends(get_db)):
+    db_job = crud.read_job(db, job_id=job_id)
+    if db_job is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    return job
+    return db_job
 
-@app.post("/job/", response_model=schemas.Job)
+@app.post("/job/", response_model=schemas.Job, status_code=status.HTTP_201_CREATED)
 def create_job(job: schemas.JobCreate, db: Session = Depends(get_db)):
     return crud.create_job(db=db, job=job)
 
@@ -77,20 +84,20 @@ def delete_job(job_id: int, db: Session = Depends(get_db)):
 
 @app.get("/employees/", response_model=List[schemas.Employee])
 def create_employee(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    employees = crud.get_employees(db, skip=skip, limit=limit)
-    return employees
+    db_employees = crud.read_employees(db, skip=skip, limit=limit)
+    return db_employees
 
 @app.get("/employee/{employee_id}", response_model=schemas.Employee)
-def get_employee(employee_id: int, db: Session = Depends(get_db)):
-    db_employee = crud.get_employee(db, employee_id=employee_id)
+def read_employee(employee_id: int, db: Session = Depends(get_db)):
+    db_employee = crud.read_employee(db, employee_id=employee_id)
     if db_employee is None:
         raise HTTPException(status_code=404, detail="Employee not found")
     return db_employee
 
-@app.post("/employee/", response_model=schemas.Employee)
+@app.post("/employee/", response_model=schemas.Employee, status_code=status.HTTP_201_CREATED)
 def create_employee(employee: schemas.EmployeeCreate, db: Session = Depends(get_db)):
-    employee = crud.get_employee_by_person_id(db, employee.person_id)
-    if employee:
+    db_employee = crud.read_employee_by_person_id(db, employee.person_id)
+    if db_employee:
         raise HTTPException(status_code=400, detail="Employee with this person_id already exists")
     return crud.create_employee(db=db, employee=employee)
 
@@ -103,23 +110,23 @@ def delete_employee(employee_id: int, db: Session = Depends(get_db)):
     return crud.delete_employee(db=db, employee_id=employee_id)
 
 @app.get("/patients/", response_model=List[schemas.Patient])
-def get_patients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    patients = crud.get_patients(db, skip=skip, limit=limit)
-    if patients is None:
+def read_patients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    db_patients = crud.read_patients(db, skip=skip, limit=limit)
+    if db_patients is None:
         raise HTTPException(status_code=404, detail="Patients not found")
-    return patients
+    return db_patients
 
 @app.get("/patient/{patient_id}", response_model=schemas.Patient)
-def get_patient(patient_id: int, db: Session = Depends(get_db)):
-    db_patient = crud.get_patient(db, patient_id=patient_id)
+def read_patient(patient_id: int, db: Session = Depends(get_db)):
+    db_patient = crud.read_patient(db, patient_id=patient_id)
     if db_patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
     return db_patient
 
-@app.post("/patient/", response_model=schemas.Patient)
+@app.post("/patient/", response_model=schemas.Patient, status_code=status.HTTP_201_CREATED)
 def create_patient(patient: schemas.PatientCreate, db: Session = Depends(get_db)):
-    patient = crud.get_patient_by_person_id(db, patient.person_id)
-    if patient:
+    db_patient = crud.read_patient_by_person_id(db, patient.person_id)
+    if db_patient:
         raise HTTPException(status_code=400, detail="Patient with this person_id already exists")
     return crud.create_patient(db=db, patient=patient)
 
@@ -132,23 +139,23 @@ def delete_patient(patient_id: int, db: Session = Depends(get_db)):
     return crud.delete_patient(db=db, patient_id=patient_id)
 
 @app.get("/units/", response_model=List[schemas.Unit])
-def get_units(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    units = crud.get_units(db, skip=skip, limit=limit)
-    if units is None:
+def read_units(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    db_units = crud.read_units(db, skip=skip, limit=limit)
+    if db_units is None:
         raise HTTPException(status_code=404, detail="Units not found")
-    return units
+    return db_units
 
 @app.get("/unit/{unit_id}", response_model=schemas.Unit)
-def get_unit(unit_id: int, db: Session = Depends(get_db)):
-    db_unit = crud.get_unit(db, unit_id=unit_id)
+def read_unit(unit_id: int, db: Session = Depends(get_db)):
+    db_unit = crud.read_unit(db, unit_id=unit_id)
     if db_unit is None:
         raise HTTPException(status_code=404, detail="Unit not found")
     return db_unit
 
-@app.post("/unit/", response_model=schemas.Unit)
+@app.post("/unit/", response_model=schemas.Unit, status_code=status.HTTP_201_CREATED)
 def create_unit(unit: schemas.UnitCreate, db: Session = Depends(get_db)):
-    unit = crud.get_unit_by_name(db, unit.name)
-    if unit:
+    db_unit = crud.read_unit_by_name(db, unit.name)
+    if db_unit:
         raise HTTPException(status_code=400, detail="Unit with this name already exists")
     return crud.create_unit(db=db, unit=unit)
 
@@ -161,23 +168,23 @@ def delete_unit(unit_id: int, db: Session = Depends(get_db)):
     return crud.delete_unit(db=db, unit_id=unit_id)
 
 @app.get("/prescriptions/", response_model=List[schemas.Prescription])
-def get_prescriptions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    prescriptions = crud.get_prescriptions(db, skip=skip, limit=limit)
-    if prescriptions is None:
+def read_prescriptions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    db_prescriptions = crud.read_prescriptions(db, skip=skip, limit=limit)
+    if db_prescriptions is None:
         raise HTTPException(status_code=404, detail="Prescriptions not found")
-    return prescriptions
+    return db_prescriptions
 
 @app.get("/prescription/{prescription_id}", response_model=schemas.Prescription)
-def get_prescription(prescription_id: int, db: Session = Depends(get_db)):
-    db_prescription = crud.get_prescription(db, prescription_id=prescription_id)
+def read_prescription(prescription_id: int, db: Session = Depends(get_db)):
+    db_prescription = crud.read_prescription(db, prescription_id=prescription_id)
     if db_prescription is None:
         raise HTTPException(status_code=404, detail="Prescription not found")
     return db_prescription
 
-@app.post("/prescription/", response_model=schemas.Prescription)
+@app.post("/prescription/", response_model=schemas.Prescription, status_code=status.HTTP_201_CREATED)
 def create_prescription(prescription: schemas.PrescriptionCreate, db: Session = Depends(get_db)):
-    prescription = crud.get_prescription_by_name(db, prescription.name)
-    if prescription:
+    db_prescription = crud.read_prescription_by_name(db, prescription.name)
+    if db_prescription:
         raise HTTPException(status_code=400, detail="Prescription with this name already exists")
     return crud.create_prescription(db=db, prescription=prescription)
 
@@ -190,23 +197,23 @@ def delete_prescription(prescription_id: int, db: Session = Depends(get_db)):
     return crud.delete_prescription(db=db, prescription_id=prescription_id)
 
 @app.get("/appointments/", response_model=List[schemas.Appointment])
-def get_appointments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    appointments = crud.get_appointments(db, skip=skip, limit=limit)
-    if appointments is None:
+def read_appointments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    db_appointments = crud.read_appointments(db, skip=skip, limit=limit)
+    if db_appointments is None:
         raise HTTPException(status_code=404, detail="Appointments not found")
-    return appointments
+    return db_appointments
 
 @app.get("/appointment/{appointment_id}", response_model=schemas.Appointment)
-def get_appointment(appointment_id: int, db: Session = Depends(get_db)):
-    db_appointment = crud.get_appointment(db, appointment_id)
+def read_appointment(appointment_id: int, db: Session = Depends(get_db)):
+    db_appointment = crud.read_appointment(db, appointment_id)
     if db_appointment is None:
         raise HTTPException(status_code=404, detail="Appointment not found")
     return db_appointment
 
-@app.post("/appointment/", response_model=schemas.Appointment)
+@app.post("/appointment/", response_model=schemas.Appointment, status_code=status.HTTP_201_CREATED)
 def create_appointment(appointment: schemas.AppointmentCreate, db: Session = Depends(get_db)):
-    appointment = crud.get_appointment_by_person_id(db, appointment.person_id)
-    if appointment:
+    db_appointment = crud.read_appointment_by_person_id(db, appointment.person_id)
+    if db_appointment:
         raise HTTPException(status_code=400, detail="Appointment with this person_id already exists")
     return crud.create_appointment(db=db, appointment=appointment)
 
@@ -217,4 +224,3 @@ def update_appointment(appointment_id: int, appointment: schemas.AppointmentUpda
 @app.delete("/appointment/{appointment_id}", response_model=schemas.Appointment)
 def delete_appointment(appointment_id: int, db: Session = Depends(get_db)):
     return crud.delete_appointment(db=db, appointment_id=appointment_id)
-

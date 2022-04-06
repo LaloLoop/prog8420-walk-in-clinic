@@ -1,12 +1,12 @@
-
+from database import SessionLocal, engine
+from models import Appointment, Employee, Job, Patient, Person, Prescription, Unit
 from time import time
-from sqlalchemy.orm import sessionmaker
-from src import constants as cs
-from src.repos.models import Appointment, Employee, Job, Patient, Person, Prescription, Unit
-
+import constants as cs
 from faker import Faker
 
-def seed_db(session):
+def seed_database():
+   
+    session = SessionLocal()
     
     faker = Faker(cs.FAKER_LOCALE)
     

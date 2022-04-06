@@ -2,8 +2,9 @@ import datetime
 from datetime import timedelta
 import math
 from pathlib import Path
+from sre_parse import SPECIAL_CHARS
 from openpyxl import load_workbook
-from src.repos.models import Appointment,Employee, Job
+from models import Appointment, Employee, Job
 
 OPENING_HOUR_TIME_DELTA = timedelta(hours=8)
 
@@ -15,6 +16,16 @@ CLOSING_HOUR_TIME_DELTA = timedelta(hours=17)
 APPOINTMENT_LENGTH_TIME_DELTA = timedelta(minutes=30)
 
 FAKER_LOCALE = 'en_CA'
+
+STRICT_POSTAL_CODE_CAPITALIZATION = False
+FIX_SPACE_IN_POSTAL_CODE = True
+
+# https://en.wikipedia.org/wiki/List_of_Special_Characters_for_Passwords
+SPECIAL_CHARS_ALLOWED_IN_PASSWORD_XLSX_FILENAME = 'Wikipedia_List_of_Special_Characters_for_Passwords.xlsx'
+SPECIAL_CHARS_ALLOWED_IN_PASSWORD_XLSX_FILEPATH = Path.cwd() / SPECIAL_CHARS_ALLOWED_IN_PASSWORD_XLSX_FILENAME
+
+MEDICATION_XLSX_FILENAME = 'Clin_Calc_dot_com_the_top_200_drugs_of_2019.xlsx'
+MEDICATION_XLSX_FILEPATH = Path.cwd() / MEDICATION_XLSX_FILENAME
 
 NUM_ADMIN = 1 # less than 5
 NUM_STAFF = 3 # less than 5
@@ -32,7 +43,8 @@ JOB_SPECIALTIES =   ADMIN_SPECIALTIES[0:NUM_ADMIN] + \
                     STAFF_SPECIALTIES[0:NUM_STAFF] + \
                     DOCTOR_SPECIALTIES[0:NUM_DOCTORS]
                     
-INIT_NUM_PATIENTS = 81
+INIT_NUM_PATIENTS = 40
+NUM_PRESCRIPTIONS = INIT_NUM_PATIENTS
 
 UNIT_NAMES = ['mg','mL','g','oz']
 
@@ -40,20 +52,24 @@ PRESCRIPTION_QUANTITIES = [1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 100, 200, 300, 400
 
 PROVINCES = ['AB','BC','MB','NB','NL','NS','NT','NU','ON','PE','QC','SK','YT']
 
-NUM_PRESCRIPTIONS = INIT_NUM_PATIENTS
-
-PROVINCES = ['ON']
-
-MEDICATION_XLSX_FILENAME = 'Clin_Calc_dot_com_the_top_200_drugs_of_2019.xlsx'
-
-# THIS assumes that constants.py and MEDICATION_XLSX_FILENAME are in the same directory
-# AND main.py is in the same directory as the parent directory of constants.py
-MEDICATION_XLSX_FILEPATH = Path.cwd() / 'src' / MEDICATION_XLSX_FILENAME
 
 def generate_10_digit_with_2_letter_version_code_OHIP_number(faker):
     return str(faker.random_number(digits=10)) + faker.random_letter().upper() + faker.random_letter().upper()
 
+def get_special_chars_allowed_for_passwords_from_xlsx_file():
+    wb = load_workbook(filename = SPECIAL_CHARS_ALLOWED_IN_PASSWORD_XLSX_FILEPATH)
+    sheet = wb.active
+    
+    special_chars_allowed = []
+    for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, min_col=2, max_col=2):
+        if row[0].value == '':
+            special_chars_allowed.append(' ') # space is missing from .xlsx file
+        else:
+            special_chars_allowed.append(row[0].value)
+    return  special_chars_allowed
+
 def get_medication_names_from_xlsx_file():
+    
     wb = load_workbook(filename = MEDICATION_XLSX_FILEPATH)
     sheet = wb.active
     
@@ -64,13 +80,20 @@ def get_medication_names_from_xlsx_file():
         
     return medication_names
 
+def get_todays_datetime_from_time_delta(time_delta):
+    return datetime.datetime.combine(datetime.date.today(),datetime.time(0)) + time_delta
+
 def get_todays_opening_datetime():
-    return datetime.datetime.combine(datetime.date.today(), datetime.time(0)) + OPENING_HOUR_TIME_DELTA
-
-
+    return get_todays_closing_datetime(OPENING_HOUR_TIME_DELTA)
+    
 def get_todays_closing_datetime():
-    return datetime.datetime.combine(datetime.date.today(), datetime.time(0)) + CLOSING_HOUR_TIME_DELTA
+    return get_todays_datetime_from_time_delta(CLOSING_HOUR_TIME_DELTA)
+    
+def get_todays_starting_lunch_time_datetime():
+    return get_todays_datetime_from_time_delta(START_LUNCH_TIME_DELTA)
 
+def get_todays_ending_lunch_time_datetime():
+    return get_todays_datetime_from_time_delta(END_LUNCH_TIME_DELTA)
 
 def get_number_of_appointments_available_today(session):
     time_available_in_day_time_delta = CLOSING_HOUR_TIME_DELTA - OPENING_HOUR_TIME_DELTA - \
