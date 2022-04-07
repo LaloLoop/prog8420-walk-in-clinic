@@ -84,7 +84,7 @@ def get_todays_datetime_from_time_delta(time_delta):
     return datetime.datetime.combine(datetime.date.today(),datetime.time(0)) + time_delta
 
 def get_todays_opening_datetime():
-    return get_todays_closing_datetime(OPENING_HOUR_TIME_DELTA)
+    return get_todays_datetime_from_time_delta(OPENING_HOUR_TIME_DELTA)
     
 def get_todays_closing_datetime():
     return get_todays_datetime_from_time_delta(CLOSING_HOUR_TIME_DELTA)

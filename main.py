@@ -1,6 +1,9 @@
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, status
+
+from fastapi.middleware.cors import CORSMiddleware
+
 from sqlalchemy.orm import Session
 
 import crud, models, schemas
@@ -14,6 +17,21 @@ models.Base.metadata.create_all(bind=engine)
 seed_database()
 
 app = FastAPI()
+
+# allow ANVIL client to access the API
+origins = [
+    "http://localhost:3030",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# change to a file example
 
 # Dependency
 def get_db():
