@@ -18,9 +18,8 @@ seed_database()
 
 app = FastAPI()
 
-# allow ANVIL client to access the API
 origins = [
-    "http://localhost:3030",
+    "http://localhost:3030", # allow ANVIL client to access the API
 ]
 
 app.add_middleware(
