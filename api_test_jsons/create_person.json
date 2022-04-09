@@ -1,0 +1,11 @@
+{
+    "first_name": "string",
+    "last_name": "string",
+    "birthdate": "2022-04-05",
+    "street": "string",
+    "city": "string",
+    "province": "ON",
+    "postalcode": "N2K1L6",
+    "email": "a@b.c",
+    "phone_number": "+1 147-891-2323 ext. 234"
+  }

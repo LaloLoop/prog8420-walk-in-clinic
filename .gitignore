@@ -1,2 +1,5 @@
 *.sqlite
 forms.log
+*__pycache__/
+venv/
+~*.xlsx
