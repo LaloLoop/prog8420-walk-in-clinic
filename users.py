@@ -2,9 +2,16 @@ from typing import AsyncGenerator
 from fastapi import Depends
 from fastapi_users import BaseUserManager
 from fastapi_users_db_sqlalchemy import AsyncSession, SQLAlchemyUserDatabase
-from models import Employee
 
-from schemas import EmployeeCreate, EmployeeDB
+from fastapi import Depends
+from fastapi_users import BaseUserManager, FastAPIUsers
+from fastapi_users.authentication import (
+    AuthenticationBackend,
+    BearerTransport,
+    JWTStrategy,
+)
+
+from schemas import Employee, EmployeeCreate, EmployeeDB, EmployeeUpdate
 from database import Base, async_session_maker, engine
 
 
@@ -30,3 +37,30 @@ async def get_user_db(session: AsyncSession = Depends(get_async_session)):
 
 async def get_user_manager(user_db=Depends(get_user_db)):
     yield UserManager(user_db)
+
+async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
+    yield UserManager(user_db)
+
+
+bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
+
+
+def get_jwt_strategy() -> JWTStrategy:
+    return JWTStrategy(secret=SECRET, lifetime_seconds=3600)
+
+
+auth_backend = AuthenticationBackend(
+    name="jwt",
+    transport=bearer_transport,
+    get_strategy=get_jwt_strategy,
+)
+fastapi_users = FastAPIUsers(
+    get_user_manager,
+    [auth_backend],
+    Employee,
+    EmployeeCreate,
+    EmployeeUpdate,
+    EmployeeDB,
+)
+
+current_active_user = fastapi_users.current_user(active=True)

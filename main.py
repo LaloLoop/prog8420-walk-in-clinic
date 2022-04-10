@@ -6,12 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from sqlalchemy.orm import Session
 
-import crud, models, schemas
+import crud, schemas
 
-from database import engine
-from seed_db import seed_database, spawn_db_seed
-import constants as cs
-from users import UserManager, create_db_and_tables, get_async_session, get_user_manager
+from seed_db import spawn_db_seed
+from users import auth_backend, create_db_and_tables, get_async_session, current_active_user, fastapi_users
 
 app = FastAPI()
 
@@ -27,12 +25,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+## AUTH ##
+
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"]
+)
+app.include_router(fastapi_users.get_register_router(), prefix="/auth", tags=["auth"])
+app.include_router(
+    fastapi_users.get_reset_password_router(),
+    prefix="/auth",
+    tags=["auth"],
+)
+app.include_router(
+    fastapi_users.get_verify_router(),
+    prefix="/auth",
+    tags=["auth"],
+)
+app.include_router(fastapi_users.get_users_router(), prefix="/users", tags=["users"])
+
+
+@app.get("/authenticated-route")
+async def authenticated_route(user: schemas.EmployeeDB = Depends(current_active_user)):
+    return {"message": f"Hello {user.email}!"}
+
+
+### SETUP ###
+
 @app.on_event("startup")
 async def on_startup():
     # Not needed if you setup a migration system like Alembic
     await create_db_and_tables()
     await spawn_db_seed()
 
+###### >>>>> COMMON APP Routes <<<<<< ####
 @app.get("/")
 async def root():
     return {"message": "Go to <base_url>/docs to see the Swagger Page"}
