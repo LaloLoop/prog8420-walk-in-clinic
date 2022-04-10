@@ -11,6 +11,7 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 
+import models as m
 from schemas import Employee, EmployeeCreate, EmployeeDB, EmployeeUpdate
 from database import Base, async_session_maker, engine
 
@@ -33,7 +34,7 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
-    yield SQLAlchemyUserDatabase(EmployeeDB, session, Employee)
+    yield SQLAlchemyUserDatabase(EmployeeDB, session, m.Employee)
 
 async def get_user_manager(user_db=Depends(get_user_db)):
     yield UserManager(user_db)
