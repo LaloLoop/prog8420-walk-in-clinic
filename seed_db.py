@@ -131,6 +131,7 @@ async def spawn_db_seed():
 async def seed_database(session: AsyncSession, user_manager: UserManager):
 
     faker = Faker(cs.FAKER_LOCALE)
+    Faker.seed(cs.FAKER_SEED)
     
     await session.run_sync(seed_jobs(faker))
     await session.run_sync(seed_person(faker))
@@ -151,17 +152,18 @@ async def seed_database(session: AsyncSession, user_manager: UserManager):
         jobs = result.scalars().all()
 
         for person, job in zip(people, jobs):
+            password = "admin" if job.title == "admin" else faker.password()
             try:
                 user = await user_manager.create(
                     EmployeeCreate(
                         email=person.email,
-                        password=faker.password(),
-                        job_id = job.id,
-                        person_id = person.id,
+                        password=password,
+                        job_id=job.id,
+                        person_id=person.id,
                         is_superuser=False
                     )
                 )
-                print(f"User created {user}")
+                print(f"User created username {user.email} with pass. {password}")
             except UserAlreadyExists:
                 print(f"User {person.email} already exists")
 
