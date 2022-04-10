@@ -3,7 +3,10 @@ import datetime
 from datetime import date
 from typing import List, Optional
 from unicodedata import name
+from fastapi_users_db_sqlalchemy import BaseUserDatabase
 from pydantic import BaseModel, validator
+
+from fastapi_users import models
 
 import constants as cs
 
@@ -192,37 +195,22 @@ class Job(JobBase):
     class Config:
         orm_mode = True
         
-class EmployeeBase(BaseModel):
-    password: str
-    
-    @validator('password')
-    def password_must_be_between_6_and_20_characters_contain_1_number_1_uppercase_1_lowercase_and_1_special_character(cls, v):
-        special_chars_allowed = cs.get_special_chars_allowed_for_passwords_from_xlsx_file()
-        if len(v) < 6 or len(v) > 20:
-            raise ValueError(f'{v} must be between 6 and 20 characters')
-        if not any(char.isdigit() for char in v):
-            raise ValueError(f'{v} must contain at least 1 digit')
-        if not any(char.isupper() for char in v):
-            raise ValueError(f'{v} must contain at least 1 uppercase letter')
-        if not any(char.islower() for char in v):
-            raise ValueError(f'{v} must contain at least 1 lowercase letter')
-        if not any(char in special_chars_allowed for char in v):
-            raise ValueError(f'{v} must contain at least 1 special character')
-        return v
-    
-class EmployeeCreate(EmployeeBase):
+class EmployeeCreate(models.BaseUserCreate):
+    person_id: int
+    job_id: int
+
+class EmployeeUpdate(models.BaseUserUpdate):
     pass
 
-class EmployeeUpdate(EmployeeBase):
-    pass
-
-class Employee(EmployeeBase):
-    id: int
+class Employee(models.BaseUser):
     person_id: int
     job_id: int
     
     class Config:
         orm_mode = True
+
+class EmployeeDB(Employee, models.BaseUserDB):
+    pass
 
 class PatientBase(BaseModel):
     ohip: str

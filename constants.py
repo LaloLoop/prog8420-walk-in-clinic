@@ -95,12 +95,11 @@ def get_todays_starting_lunch_time_datetime():
 def get_todays_ending_lunch_time_datetime():
     return get_todays_datetime_from_time_delta(END_LUNCH_TIME_DELTA)
 
-def get_number_of_appointments_available_today(session):
+def get_number_of_appointments_available_today(num_doctors):
     time_available_in_day_time_delta = CLOSING_HOUR_TIME_DELTA - OPENING_HOUR_TIME_DELTA - \
                                        (END_LUNCH_TIME_DELTA - START_LUNCH_TIME_DELTA)
    
-    doctors = session.query(Employee).join(Job).filter(Job.title == DOCTOR_TITLE).all()
-    return math.floor(time_available_in_day_time_delta.seconds * len(doctors) / APPOINTMENT_LENGTH_TIME_DELTA.seconds)
+    return math.floor(time_available_in_day_time_delta.seconds * num_doctors / APPOINTMENT_LENGTH_TIME_DELTA.seconds)
 
 
 #### VVVV BELOW IS UNIMPLEMENTED/BRAINSTORMING ONLY VVVV ####
