@@ -1,80 +1,86 @@
+from fastapi import Depends
+from fastapi_users_db_sqlalchemy import AsyncSession
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 import models, schemas
+from users import get_async_session
 
-def read_persons(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Person).offset(skip).limit(limit).all()
+class PersonCRUD:
 
-def read_person(db: Session, person_id: int):
-    return db.query(models.Person).filter(models.Person.id == person_id).first()
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-def read_person_by_email(db: Session, email: str):
-    return db.query(models.Person).filter(models.Person.email == email).first()
+    async def read_person_by_email(self, email: str, session: AsyncSession = Depends(get_async_session)):
+        result = await self.session.execute(select(models.Person).where(models.Person.email == email))
+        return result.scalars().first()
 
-def create_person(db: Session, person: schemas.PersonCreate):
-    db_person = models.Person(**person.dict())
-    db.add(db_person)
-    db.commit()
-    db.refresh(db_person)
-    return db_person
+    async def read_persons(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Person).offset(skip).limit(limit))
+        
+        persons = result.scalars().all()
 
-def update_person(db: Session, person_id: int, person: schemas.PersonUpdate):
-    db_person = read_person(db, person_id)
-    if db_person:
-        db_person.first_name = person.first_name
-        db_person.last_name = person.last_name
-        db_person.birthdate = person.birthdate
-        db_person.street = person.street
-        db_person.city = person.city
-        db_person.province = person.province
-        db_person.postalcode = person.postalcode
-        db_person.email = person.email
-        db_person.phone_number = person.phone_number
-        db.commit()
+        return persons
+
+    async def read_person(self, person_id: int):
+        result = await self.session.execute(select(models.Person).where(models.Person.id == person_id))
+
+        return result.scalars().first()
+
+
+    async def create_person(self, person: schemas.PersonCreate):
+        db_person = models.Person(**person.dict())
+
+        self.session.add(db_person)
+        await self.session.commit()
+
         return db_person
-    return None
 
-def delete_person(db: Session, person_id: int):
-    db_person = read_person(db, person_id)
-    if db_person:
-        db.delete(db_person)
-        db.commit()
-        return db_person
-    return None
+    async def update_person(self, person_id: int, person: schemas.PersonUpdate):
+        p_values = person.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        await self.session.execute(update(models.Person).where(models.Person.id == person_id).values(**p_values))
+        await self.session.commit()
 
-def read_employees(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Employee).offset(skip).limit(limit).all()
+        return await self.read_person(person_id)
 
-def read_employee(db: Session, employee_id: int):
-    return db.query(models.Employee).filter(models.Employee.id == employee_id).first()
+    async def delete_person(self, person_id: int):
+        await self.session.execute(delete(models.Person).where(models.Person.id == person_id))
+        await self.session.commit()
 
-def read_employee_by_person_id(db: Session, person_id: int):
-    return db.query(models.Employee).filter(models.Employee.person_id == person_id).first()
+class EmployeeCRUD:
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-def create_employee(db: Session, employee: schemas.EmployeeCreate):
-    db_employee = models.Employee(**employee.dict())
-    db.add(db_employee)
-    db.commit()
-    db.refresh(db_employee)
-    return db_employee
+    async def read_employees(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Employee).offset(skip).limit(limit))
 
-def update_employee(db: Session, employee_id: int, employee: schemas.EmployeeUpdate):
-    db_employee = read_employee(db, employee_id)
-    if db_employee:
-        db_employee.person_id = employee.person_id
-        db_employee.job_id = employee.job_id
-        db_employee.password = employee.password
-        db.commit()
-        return db_employee
-    return None
+        return result.scalars().all()
 
-def delete_employee(db: Session, employee_id: int):
-    db_employee = read_employee(db, employee_id)
-    if db_employee:
-        db.delete(db_employee)
-        db.commit()
-        return db_employee
-    return None
+    async def read_employee(self, employee_id: int):
+        result = await self.session.execute(select(models.Employee).where(models.Employee.id == employee_id))
+        return result.scalars().first()
+
+    async def read_employee_by_person_id(self, person_id: int):
+        result = await self.session.execute(select(models.Employee).where(models.Employee.person_id == person_id))
+        return result.scalars().first()
+
+    def delete_employee(db: Session, employee_id: int):
+        db_employee = read_employee(db, employee_id)
+        if db_employee:
+            db.delete(db_employee)
+            db.commit()
+            return db_employee
+        return None
+
+async def person_crud(session=Depends(get_async_session)):
+    yield PersonCRUD(session)
+
+async def employee_crud(session=Depends(get_async_session)):
+    yield EmployeeCRUD(session)
+
 
 def read_jobs(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Job).offset(skip).limit(limit).all()

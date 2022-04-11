@@ -86,10 +86,10 @@ class PersonBase(BaseModel):
             raise ValueError(f'{v} must be between 2 and 100 characters')
         return v
     
-    @validator('first_name', 'last_name', 'city')
+    @validator('first_name', 'last_name')
     def string_must_be_alphabetic(cls, v):
-        if not v.isalpha():
-            raise ValueError(f'{v} must be alphabetic')
+        if not re.match(r"\w+", v):
+            raise ValueError(f'{v} must have alphanumeric characters')
         return v
     
     @validator('birthdate')
@@ -112,7 +112,13 @@ class PersonBase(BaseModel):
     
     @validator('street')
     def street_must_be_alphanumeric(cls, v):
-        if not v.isalnum():
+        if not re.match(r"[A-Za-z0-9 ,]*", v):
+            raise ValueError(f'{v} must be alphanumeric')
+        return v
+
+    @validator('city')
+    def city_must_be_alphanumeric(cls, v):
+        if not re.match(r"[A-Za-z0-9 ,]*", v):
             raise ValueError(f'{v} must be alphanumeric')
         return v
     
@@ -200,7 +206,7 @@ class EmployeeCreate(models.BaseUserCreate):
     job_id: int
 
 class EmployeeUpdate(models.BaseUserUpdate):
-    pass
+    job_id: int
 
 class Employee(models.BaseUser):
     person_id: int
