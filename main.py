@@ -101,30 +101,34 @@ async def delete_person(person_id: int, crud_helper: crud.PersonCRUD = Depends(c
     return db_person
 
 @app.get("/jobs/", response_model=List[schemas.Job], tags=["job"])
-def read_jobs(skip: int = 0, limit: int = 100, db: Session = Depends(get_async_session)):
-    db_jobs = crud.read_jobs(db, skip=skip, limit=limit)
+async def read_jobs(skip: int = 0, limit: int = 100, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
+    db_jobs = await crud_helper.read_jobs(skip=skip, limit=limit)
     if db_jobs is None:
         raise HTTPException(status_code=404, detail="Jobs not found")
     return db_jobs
 
 @app.get("/job/{job_id}", response_model=schemas.Job, tags=["job"])
-def read_job(job_id: int, db: Session = Depends(get_async_session)):
-    db_job = crud.read_job(db, job_id=job_id)
+async def read_job(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
+    db_job = await crud_helper.read_job(job_id=job_id)
     if db_job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return db_job
 
 @app.post("/job/", response_model=schemas.Job, status_code=status.HTTP_201_CREATED, tags=["job"])
-def create_job(job: schemas.JobCreate, db: Session = Depends(get_async_session)):
-    return crud.create_job(db=db, job=job)
+async def create_job(job: schemas.JobCreate, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
+    return await crud_helper.create_job(job=job)
 
 @app.put("/job/{job_id}", response_model=schemas.Job, tags=["job"])
-def update_job(job_id: int, job: schemas.JobUpdate, db: Session = Depends(get_async_session)):
-    return crud.update_job(db=db, job_id=job_id, job=job)
+async def update_job(job_id: int, job: schemas.JobUpdate, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
+    return await crud_helper.update_job(job_id=job_id, job=job)
 
 @app.delete("/job/{job_id}", response_model=schemas.Job, tags=["job"])
-def delete_job(job_id: int, db: Session = Depends(get_async_session)):
-    return crud.delete_job(db=db, job_id=job_id)
+async def delete_job(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
+    db_person = await crud_helper.read_job(job_id)
+    if db_person is None:
+        raise HTTPException(status_code=404, detail="Person not found")
+    await crud_helper.delete_job(job_id=job_id)
+    return db_person
 
 @app.get("/employees/", response_model=List[schemas.Employee], tags=["employee"])
 async def create_employee(skip: int = 0, limit: int = 100, crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):

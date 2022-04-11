@@ -75,42 +75,50 @@ class EmployeeCRUD:
             return db_employee
         return None
 
+class JobCRUD:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def read_jobs(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Job).offset(skip).limit(limit))
+        
+        return result.scalars().all()
+
+    async def read_job(self, job_id: int):
+        result = await self.session.execute(select(models.Job).where(models.Job.id == job_id))
+
+        return result.scalars().first()
+
+    async def create_job(self, job: schemas.JobCreate):
+        db_job = models.Job(**job.dict())
+        self.session.add(db_job)
+        await self.session.commit()
+
+        return db_job
+
+    async def update_job(self, job_id: int, job: schemas.JobUpdate):
+        p_values = job.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        
+        await self.session.execute(update(models.Job).where(models.Job.id == job_id).values(**p_values))
+        await self.session.commit()
+
+        return await self.read_job(job_id)
+
+    async def delete_job(self, job_id: int):
+        await self.session.execute(delete(models.Job).where(models.Job.id == job_id))
+        await self.session.commit()
+
 async def person_crud(session=Depends(get_async_session)):
     yield PersonCRUD(session)
 
 async def employee_crud(session=Depends(get_async_session)):
     yield EmployeeCRUD(session)
 
-
-def read_jobs(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Job).offset(skip).limit(limit).all()
-
-def read_job(db: Session, job_id: int):
-    return db.query(models.Job).filter(models.Job.id == job_id).first()
-
-def create_job(db: Session, job: schemas.JobCreate):
-    db_job = models.Job(**job.dict())
-    db.add(db_job)
-    db.commit()
-    db.refresh(db_job)
-    return db_job
-
-def update_job(db: Session, job_id: int, job: schemas.JobUpdate):
-    db_job = read_job(db, job_id)
-    if db_job:
-        db_job.title = job.title
-        db_job.speciality = job.speciality
-        db.commit()
-        return db_job
-    return None
-
-def delete_job(db: Session, job_id: int):
-    db_job = read_job(db, job_id)
-    if db_job:
-        db.delete(db_job)
-        db.commit()
-        return db_job
-    return None
+async def job_crud(session=Depends(get_async_session)):
+    yield JobCRUD(session)
 
 def read_patients(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Patient).offset(skip).limit(limit).all()
