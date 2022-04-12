@@ -1,234 +1,298 @@
+from fastapi import Depends
+from fastapi_users_db_sqlalchemy import AsyncSession
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 import models, schemas
+from users import get_async_session
 
-def read_persons(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Person).offset(skip).limit(limit).all()
+class PersonCRUD:
 
-def read_person(db: Session, person_id: int):
-    return db.query(models.Person).filter(models.Person.id == person_id).first()
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-def read_person_by_email(db: Session, email: str):
-    return db.query(models.Person).filter(models.Person.email == email).first()
+    async def read_person_by_email(self, email: str, session: AsyncSession = Depends(get_async_session)):
+        result = await self.session.execute(select(models.Person).where(models.Person.email == email))
+        return result.scalars().first()
 
-def create_person(db: Session, person: schemas.PersonCreate):
-    db_person = models.Person(**person.dict())
-    db.add(db_person)
-    db.commit()
-    db.refresh(db_person)
-    return db_person
+    async def read_persons(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Person).offset(skip).limit(limit))
+        
+        persons = result.scalars().all()
 
-def update_person(db: Session, person_id: int, person: schemas.PersonUpdate):
-    db_person = read_person(db, person_id)
-    if db_person:
-        db_person.first_name = person.first_name
-        db_person.last_name = person.last_name
-        db_person.birthdate = person.birthdate
-        db_person.street = person.street
-        db_person.city = person.city
-        db_person.province = person.province
-        db_person.postalcode = person.postalcode
-        db_person.email = person.email
-        db_person.phone_number = person.phone_number
-        db.commit()
+        return persons
+
+    async def read_person(self, person_id: int):
+        result = await self.session.execute(select(models.Person).where(models.Person.id == person_id))
+
+        return result.scalars().first()
+
+
+    async def create_person(self, person: schemas.PersonCreate):
+        db_person = models.Person(**person.dict())
+
+        self.session.add(db_person)
+        await self.session.commit()
+
         return db_person
-    return None
 
-def delete_person(db: Session, person_id: int):
-    db_person = read_person(db, person_id)
-    if db_person:
-        db.delete(db_person)
-        db.commit()
-        return db_person
-    return None
+    async def update_person(self, person_id: int, person: schemas.PersonUpdate):
+        p_values = person.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        await self.session.execute(update(models.Person).where(models.Person.id == person_id).values(**p_values))
+        await self.session.commit()
 
-def read_employees(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Employee).offset(skip).limit(limit).all()
+        return await self.read_person(person_id)
 
-def read_employee(db: Session, employee_id: int):
-    return db.query(models.Employee).filter(models.Employee.id == employee_id).first()
+    async def delete_person(self, person_id: int):
+        await self.session.execute(delete(models.Person).where(models.Person.id == person_id))
+        await self.session.commit()
 
-def read_employee_by_person_id(db: Session, person_id: int):
-    return db.query(models.Employee).filter(models.Employee.person_id == person_id).first()
+class EmployeeCRUD:
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-def create_employee(db: Session, employee: schemas.EmployeeCreate):
-    db_employee = models.Employee(**employee.dict())
-    db.add(db_employee)
-    db.commit()
-    db.refresh(db_employee)
-    return db_employee
+    async def read_employees(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Employee).offset(skip).limit(limit))
 
-def update_employee(db: Session, employee_id: int, employee: schemas.EmployeeUpdate):
-    db_employee = read_employee(db, employee_id)
-    if db_employee:
-        db_employee.person_id = employee.person_id
-        db_employee.job_id = employee.job_id
-        db_employee.password = employee.password
-        db.commit()
-        return db_employee
-    return None
+        return result.scalars().all()
 
-def delete_employee(db: Session, employee_id: int):
-    db_employee = read_employee(db, employee_id)
-    if db_employee:
-        db.delete(db_employee)
-        db.commit()
-        return db_employee
-    return None
+    async def read_employee(self, employee_id: int):
+        result = await self.session.execute(select(models.Employee).where(models.Employee.id == employee_id))
+        return result.scalars().first()
 
-def read_jobs(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Job).offset(skip).limit(limit).all()
+    async def read_employee_by_person_id(self, person_id: int):
+        result = await self.session.execute(select(models.Employee).where(models.Employee.person_id == person_id))
+        return result.scalars().first()
 
-def read_job(db: Session, job_id: int):
-    return db.query(models.Job).filter(models.Job.id == job_id).first()
+    def delete_employee(db: Session, employee_id: int):
+        db_employee = read_employee(db, employee_id)
+        if db_employee:
+            db.delete(db_employee)
+            db.commit()
+            return db_employee
+        return None
 
-def create_job(db: Session, job: schemas.JobCreate):
-    db_job = models.Job(**job.dict())
-    db.add(db_job)
-    db.commit()
-    db.refresh(db_job)
-    return db_job
+class JobCRUD:
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-def update_job(db: Session, job_id: int, job: schemas.JobUpdate):
-    db_job = read_job(db, job_id)
-    if db_job:
-        db_job.title = job.title
-        db_job.speciality = job.speciality
-        db.commit()
+    async def read_jobs(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Job).offset(skip).limit(limit))
+        
+        return result.scalars().all()
+
+    async def read_job(self, job_id: int):
+        result = await self.session.execute(select(models.Job).where(models.Job.id == job_id))
+
+        return result.scalars().first()
+
+    async def create_job(self, job: schemas.JobCreate):
+        db_job = models.Job(**job.dict())
+        self.session.add(db_job)
+        await self.session.commit()
+
         return db_job
-    return None
 
-def delete_job(db: Session, job_id: int):
-    db_job = read_job(db, job_id)
-    if db_job:
-        db.delete(db_job)
-        db.commit()
-        return db_job
-    return None
+    async def update_job(self, job_id: int, job: schemas.JobUpdate):
+        p_values = job.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        
+        await self.session.execute(update(models.Job).where(models.Job.id == job_id).values(**p_values))
+        await self.session.commit()
 
-def read_patients(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Patient).offset(skip).limit(limit).all()
+        return await self.read_job(job_id)
 
-def read_patient(db: Session, patient_id: int):
-    return db.query(models.Patient).filter(models.Patient.id == patient_id).first()
+    async def delete_job(self, job_id: int):
+        await self.session.execute(delete(models.Job).where(models.Job.id == job_id))
+        await self.session.commit()
 
-def read_patient_by_person_id(db: Session, person_id: int):
-    return db.query(models.Patient).filter(models.Patient.person_id == person_id).first()
+class PatientCRUD:
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-def create_patient(db: Session, patient: schemas.PatientCreate):
-    db_patient = models.Patient(**patient.dict())
-    db.add(db_patient)
-    db.commit()
-    db.refresh(db_patient)
-    return db_patient
+    async def read_patients(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Patient).offset(skip).limit(limit))
+        
+        return result.scalars().all()
 
-def update_patient(db: Session, patient_id: int, patient: schemas.PatientUpdate):
-    db_patient = read_patient(db, patient_id)
-    if db_patient:
-        db_patient.person_id = patient.person_id
-        db_patient.ohip = patient.ohip
-        db.commit()
+    async def read_patient(self, patient_id: int):
+        result = await self.session.execute(select(models.Patient).where(models.Patient.id == patient_id))
+
+        return result.scalars().first()
+
+    async def read_patient_by_person_id(self, person_id: int):
+        result = await self.session.execute(select(models.Patient).where(models.Patient.person_id == person_id))
+
+        return result.scalars().first()
+
+    async def create_patient(self, patient: schemas.PatientCreate):
+        db_patient = models.Patient(**patient.dict())
+
+        self.session.add(db_patient)
+        await self.session.commit()
+
         return db_patient
-    return None
 
-def delete_patient(db: Session, patient_id: int):
-    db_patient = read_patient(db, patient_id)
-    if db_patient:
-        db.delete(db_patient)
-        db.commit()
-        return db_patient
-    return None
 
-def read_units(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Unit).offset(skip).limit(limit).all()
+    async def update_patient(self, patient_id: int, patient: schemas.PatientUpdate):
+        p_values = patient.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        await self.session.execute(update(models.Patient).where(models.Patient.id == patient_id).values(**p_values))
+        await self.session.commit()
 
-def read_unit(db: Session, unit_id: int):
-    return db.query(models.Unit).filter(models.Unit.id == unit_id).first()
+        return await self.read_patient(patient_id)
 
-def create_unit(db: Session, unit: schemas.UnitCreate):
-    db_unit = models.Unit(**unit.dict())
-    db.add(db_unit)
-    db.commit()
-    db.refresh(db_unit)
-    return db_unit
+    async def delete_patient(self, patient_id: int):
+        await self.session.execute(delete(models.Patient).where(models.Patient.id == patient_id))
+        await self.session.commit()
 
-def update_unit(db: Session, unit_id: int, unit: schemas.UnitUpdate):
-    db_unit = read_unit(db, unit_id)
-    if db_unit:
-        db_unit.name = unit.name
-        db.commit()
+class UnitCRUD:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def read_units(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Unit).offset(skip).limit(limit))
+        
+        return result.scalars().all()
+
+    async def read_unit(self, unit_id: int):
+        result = await self.session.execute(select(models.Unit).where(models.Unit.id == unit_id))
+
+        return result.scalars().first()
+
+    async def read_unit_by_name(self, name: str):
+        result = await self.session.execute(select(models.Unit).where(models.Unit.name == name))
+
+        return result.scalars().first()
+
+    async def create_unit(self, unit: schemas.UnitCreate):
+        db_unit = models.Unit(**unit.dict())
+
+        self.session.add(db_unit)
+        await self.session.commit()
+
         return db_unit
-    return None
 
-def delete_unit(db: Session, unit_id: int):
-    db_unit = read_unit(db, unit_id)
-    if db_unit:
-        db.delete(db_unit)
-        db.commit()
-        return db_unit
-    return None
+    async def update_unit(self, unit_id: int, unit: schemas.UnitUpdate):
+        p_values = unit.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        await self.session.execute(update(models.Unit).where(models.Unit.id == unit_id).values(**p_values))
+        await self.session.commit()
 
-def read_prescriptions(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Prescription).offset(skip).limit(limit).all()
+        return await self.read_unit(unit_id)
 
-def read_prescription(db: Session, prescription_id: int):
-    return db.query(models.Prescription).filter(models.Prescription.id == prescription_id).first()
+    async def delete_unit(self, unit_id: int):
+        await self.session.execute(delete(models.Unit).where(models.Unit.id == unit_id))
+        await self.session.commit()
 
-def create_prescription(db: Session, prescription: schemas.PrescriptionCreate):
-    db_prescription = models.Prescription(**prescription.dict())
-    db.add(db_prescription)
-    db.commit()
-    db.refresh(db_prescription)
-    return db_prescription
+class PrescriptionCRUD:
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-def update_prescription(db: Session, prescription_id: int, prescription: schemas.PrescriptionUpdate):
-    db_prescription = read_prescription(db, prescription_id)
-    if db_prescription:
-        db_prescription.medication = prescription.medication
-        db_prescription.quantity = prescription.quantity
-        db_prescription.unit_id = prescription.unit_id
-        db.commit()
+    async def read_prescriptions(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Prescription).offset(skip).limit(limit))
+
+        return result.scalars().all()
+
+    async def read_prescription(self, prescription_id: int):
+        result = await self.session.execute(select(models.Prescription).where(models.Prescription.id == prescription_id))
+
+        return result.scalars().first()
+
+    async def read_prescription_by_name(self, name: int):
+        result = await self.session.execute(select(models.Prescription).where(models.Prescription.medication == name))
+
+        return result.scalars().first()
+
+    async def create_prescription(self, prescription: schemas.PrescriptionCreate):
+        db_prescription = models.Prescription(**prescription.dict())
+
+        self.session.add(db_prescription)
+        await self.session.commit()
+
         return db_prescription
-    return None
 
-def delete_prescription(db: Session, prescription_id: int):
-    db_prescription = read_prescription(db, prescription_id)
-    if db_prescription:
-        db.delete(db_prescription)
-        db.commit()
-        return db_prescription
-    return None
+    async def update_prescription(self, prescription_id: int, prescription: schemas.PrescriptionUpdate):
+        p_values = prescription.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        await self.session.execute(update(models.Prescription).where(models.Prescription.id == prescription_id).values(**p_values))
+        await self.session.commit()
 
-def read_appointments(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Appointment).offset(skip).limit(limit).all()
+        return await self.read_prescription(prescription_id)
 
-def read_appointment(db: Session, appointment_id: int):
-    return db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    async def delete_prescription(self, prescription_id: int):
+        await self.session.execute(delete(models.Prescription).where(models.Prescription.id == prescription_id))
+        await self.session.commit()
 
-def create_appointment(db: Session, appointment: schemas.AppointmentCreate):
-    db_appointment = models.Appointment(**appointment.dict())
-    db.add(db_appointment)
-    db.commit()
-    db.refresh(db_appointment)
-    return db_appointment
+class AppointmentCRUD:
+    def __init__(self, session):
+        self.session = session
 
-def update_appointment(db: Session, appointment_id: int, appointment: schemas.AppointmentUpdate):
-    db_appointment = read_appointment(db, appointment_id)
-    if db_appointment:
-        db_appointment.doctor_id = appointment.doctor_id
-        db_appointment.patient_id = appointment.patient_id
-        db_appointment.staff_id = appointment.staff_id
-        db_appointment.prescription_id = appointment.prescription_id
-        db_appointment.date_and_time = appointment.date_and_time
-        db_appointment.comments = appointment.comments
-        db.commit()
+    async def read_appointments(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Appointment).offset(skip).limit(limit))
+
+        return result.scalars().all()
+
+    async def read_appointment(self, appointment_id: int):
+        result = await self.session.execute(select(models.Appointment).where(models.Appointment.id == appointment_id))
+
+        return result.scalars().first()
+
+    async def read_appointment_by_patient_id(self, person_id: int):
+        result = await self.session.execute(select(models.Appointment).where(models.Appointment.prescription_id == person_id))
+
+        return result.scalars().first()
+
+    async def create_appointment(self, appointment: schemas.AppointmentCreate):
+        db_appointment = models.Appointment(**appointment.dict())
+
+        self.session.add(db_appointment)
+        await self.session.commit()
+
         return db_appointment
-    return None
 
-def delete_appointment(db: Session, appointment_id: int):
-    db_appointment = read_appointment(db, appointment_id)
-    if db_appointment:
-        db.delete(db_appointment)
-        db.commit()
-        return db_appointment
-    return None
+    async def update_appointment(self, appointment_id: int, appointment: schemas.AppointmentUpdate):
+        p_values = appointment.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        await self.session.execute(update(models.Appointment).where(models.Appointment.id == appointment_id).values(**p_values))
+        await self.session.commit()
+
+        return await self.read_appointment(appointment_id)
+
+    async def delete_appointment(self, appointment_id: int):
+        await self.session.execute(delete(models.Appointment).where(models.Appointment.id == appointment_id))
+        await self.session.commit()
+
+async def person_crud(session=Depends(get_async_session)):
+    yield PersonCRUD(session)
+
+async def employee_crud(session=Depends(get_async_session)):
+    yield EmployeeCRUD(session)
+
+async def job_crud(session=Depends(get_async_session)):
+    yield JobCRUD(session)
+
+async def patient_crud(session=Depends(get_async_session)):
+    yield PatientCRUD(session)
+
+async def unit_crud(session=Depends(get_async_session)):
+    yield UnitCRUD(session)
+
+async def prescription_crud(session=Depends(get_async_session)):
+    yield PrescriptionCRUD(session)
+
+async def appointment_crud(session=Depends(get_async_session)):
+    yield AppointmentCRUD(session)
