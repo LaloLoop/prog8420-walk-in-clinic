@@ -286,6 +286,34 @@ def read_appointment_joined(appointment_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Appointment not found")
     return db_appointment
 
+@app.get("/appointments_by_doctor_id_with_id_display_name/{doctor_id}", response_model=List[schemas.AppointmentDisplay])
+def read_appointment_by_doctor_id_with_id_display_name(doctor_id: int, db: Session = Depends(get_db)):
+    db_appointments = crud.read_appointments_by_doctor_id_with_id_display_name(db, doctor_id=doctor_id)
+    if db_appointments is None:
+        raise HTTPException(status_code=404, detail="Appointments not found")
+    return db_appointments
+
+@app.get("/appointments_by_patient_id_with_id_display_name/{patient_id}", response_model=List[schemas.AppointmentDisplay])
+def read_appointment_by_patient_id_with_id_display_name(patient_id: int, db: Session = Depends(get_db)):
+    db_appointments = crud.read_appointments_by_patient_id_with_id_display_name(db, patient_id=patient_id)
+    if db_appointments is None:
+        raise HTTPException(status_code=404, detail="Appointments not found")
+    return db_appointments
+
+@app.get("/appointments_by_staff_id_with_id_display_name/{staff_id}", response_model=List[schemas.AppointmentDisplay])
+def read_appointment_by_staff_id_with_id_display_name(staff_id: int, db: Session = Depends(get_db)):
+    db_appointments = crud.read_appointments_by_staff_id_with_id_display_name(db, staff_id=staff_id)
+    if db_appointments is None:
+        raise HTTPException(status_code=404, detail="Appointments not found")
+    return db_appointments
+
+@app.get("/appointments_by_prescription_id_with_id_display_name/{prescription_id}", response_model=List[schemas.AppointmentDisplay])
+def read_appointment_by_prescription_id_with_id_display_name(prescription_id: int, db: Session = Depends(get_db)):
+    db_appointments = crud.read_appointments_by_prescription_id_with_id_display_name(db, prescription_id=prescription_id)
+    if db_appointments is None:
+        raise HTTPException(status_code=404, detail="Appointments not found")
+    return db_appointments
+
 @app.post("/appointment/", response_model=schemas.Appointment, status_code=status.HTTP_201_CREATED)
 def create_appointment(appointment: schemas.AppointmentCreate, db: Session = Depends(get_db)):
     db_appointment = crud.read_appointment_by_patient_id(db, appointment.person_id)
