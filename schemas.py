@@ -220,6 +220,7 @@ class EmployeeDB(Employee, models.BaseUserDB):
 
 class PatientBase(BaseModel):
     ohip: str
+    person_id: int
     
     @validator('ohip')
     def check_ohip_is_10_digits_followed_by_2_uppercase_letters(cls, v):
@@ -237,9 +238,6 @@ class PatientUpdate(PatientBase):
     pass
 
 class Patient(PatientBase):
-    id: int
-    person_id: int
-    
     class Config:
         orm_mode = True
         

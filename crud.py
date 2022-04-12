@@ -111,6 +111,48 @@ class JobCRUD:
         await self.session.execute(delete(models.Job).where(models.Job.id == job_id))
         await self.session.commit()
 
+class PatientCRUD:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def read_patients(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Patient).offset(skip).limit(limit))
+        
+        return result.scalars().all()
+
+    async def read_patient(self, patient_id: int):
+        result = await self.session.execute(select(models.Patient).where(models.Patient.id == patient_id))
+
+        return result.scalars().first()
+
+    async def read_patient_by_person_id(self, person_id: int):
+        result = await self.session.execute(select(models.Patient).where(models.Patient.person_id == person_id))
+
+        return result.scalars().first()
+
+    async def create_patient(self, patient: schemas.PatientCreate):
+        db_patient = models.Patient(**patient.dict())
+
+        self.session.add(db_patient)
+        await self.session.commit()
+
+        return db_patient
+
+
+    async def update_patient(self, patient_id: int, patient: schemas.PatientUpdate):
+        p_values = patient.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        await self.session.execute(update(models.Patient).where(models.Patient.id == patient_id).values(**p_values))
+        await self.session.commit()
+
+        return await self.read_patient(patient_id)
+
+    async def delete_patient(self, patient_id: int):
+        await self.session.execute(delete(models.Patient).where(models.Patient.id == patient_id))
+        await self.session.commit()
+
 async def person_crud(session=Depends(get_async_session)):
     yield PersonCRUD(session)
 
@@ -120,38 +162,8 @@ async def employee_crud(session=Depends(get_async_session)):
 async def job_crud(session=Depends(get_async_session)):
     yield JobCRUD(session)
 
-def read_patients(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Patient).offset(skip).limit(limit).all()
-
-def read_patient(db: Session, patient_id: int):
-    return db.query(models.Patient).filter(models.Patient.id == patient_id).first()
-
-def read_patient_by_person_id(db: Session, person_id: int):
-    return db.query(models.Patient).filter(models.Patient.person_id == person_id).first()
-
-def create_patient(db: Session, patient: schemas.PatientCreate):
-    db_patient = models.Patient(**patient.dict())
-    db.add(db_patient)
-    db.commit()
-    db.refresh(db_patient)
-    return db_patient
-
-def update_patient(db: Session, patient_id: int, patient: schemas.PatientUpdate):
-    db_patient = read_patient(db, patient_id)
-    if db_patient:
-        db_patient.person_id = patient.person_id
-        db_patient.ohip = patient.ohip
-        db.commit()
-        return db_patient
-    return None
-
-def delete_patient(db: Session, patient_id: int):
-    db_patient = read_patient(db, patient_id)
-    if db_patient:
-        db.delete(db_patient)
-        db.commit()
-        return db_patient
-    return None
+async def patient_crud(session=Depends(get_async_session)):
+    yield PatientCRUD(session)
 
 def read_units(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Unit).offset(skip).limit(limit).all()
