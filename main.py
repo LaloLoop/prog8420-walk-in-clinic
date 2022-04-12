@@ -133,10 +133,12 @@ async def delete_job(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_c
     return db_person
 
 @app.get("/employees_with_id_display_name/", response_model=List[schemas.EmployeeDisplay])
-def read_employees_joined(db: Session = Depends(get_db)):
-    db_employees = crud.read_employees_with_id_display_name(db)
+async def read_employees_joined(crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
+    db_employees = await crud_helper.read_employees_with_id_display_name()
     if db_employees is None:
         raise HTTPException(status_code=404, detail="Employees not found")
+
+    return db_employees
 
 @app.get("/employees/", response_model=List[schemas.Employee], tags=["employee"])
 async def read_employees(skip: int = 0, limit: int = 100, crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
@@ -151,15 +153,15 @@ async def read_employee(employee_id: UUID4, crud_helper: crud.EmployeeCRUD = Dep
     return db_employee
 
 @app.get("/employee_with_id_display_name/{employee_id}", response_model=schemas.EmployeeDisplay)
-def read_employee_joined(employee_id: int, db: Session = Depends(get_db)):
-    db_employee = crud.read_employee_with_id_display_name(db, employee_id=employee_id)
+async def read_employee_joined(employee_id: int, crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
+    db_employee = await crud_helper.read_employee_with_id_display_name(employee_id=employee_id)
     if db_employee is None:
         raise HTTPException(status_code=404, detail="Employee not found")
     return db_employee
 
 @app.get("/patients_with_id_display_name/", response_model=List[schemas.PatientDisplay])
-def read_patients_joined(db: Session = Depends(get_db)):
-    db_patients = crud.read_patients_with_id_display_name(db)
+async def read_patients_joined(crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
+    db_patients = await crud.read_patients_with_id_display_name()
 
 @app.get("/patients/", response_model=List[schemas.Patient], tags=["patient"])
 async def read_patients(skip: int = 0, limit: int = 100, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
@@ -177,8 +179,8 @@ async def read_patient(patient_id: int, crud_helper: crud.PatientCRUD = Depends(
 
 
 @app.get("/patient_with_id_display_name/{patient_id}", response_model=schemas.PatientDisplay)
-def read_patient_joined(patient_id: int, db: Session = Depends(get_db)):
-    db_patient = crud.read_patient_with_id_display_name(db, patient_id=patient_id)
+def read_patient_joined(patient_id: int, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
+    db_patient = crud_helper.read_patient_with_id_display_name(patient_id=patient_id)
     if db_patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
     return db_patient
@@ -246,8 +248,8 @@ async def delete_unit(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.un
 
 
 @app.get("/prescriptions_with_id_display_name/", response_model=List[schemas.PrescriptionDisplay])
-def read_prescriptions_joined(db: Session = Depends(get_db)):
-    db_prescriptions = crud.read_prescriptions_with_id_display_name(db)
+async def read_prescriptions_joined(crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
+    db_prescriptions = await crud.read_prescriptions_with_id_display_name()
 
 @app.get("/prescriptions/", response_model=List[schemas.Prescription], tags=["prescriptions"])
 async def read_prescriptions(skip: int = 0, limit: int = 100, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
@@ -265,8 +267,8 @@ async def read_prescription(prescription_id: int, crud_helper: crud.Prescription
 
  
 @app.get("/prescription_with_id_display_name/{prescription_id}", response_model=schemas.PrescriptionDisplay)
-def read_prescription_joined(prescription_id: int, db: Session = Depends(get_db)):
-    db_prescription = crud.read_prescription_with_id_display_name(db, prescription_id=prescription_id)
+async def read_prescription_joined(prescription_id: int, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
+    db_prescription = await crud_helper.read_prescription_with_id_display_name(prescription_id=prescription_id)
     if db_prescription is None:
         raise HTTPException(status_code=404, detail="Prescription not found")
     return db_prescription
@@ -296,8 +298,8 @@ async def delete_prescription(prescription_id: int, crud_helper: crud.Prescripti
 
 
 @app.get("/appointments_with_id_display_name/", response_model=List[schemas.AppointmentDisplay])
-def read_appointments_joined(db: Session = Depends(get_db)):
-    db_appointments = crud.read_appointments_with_id_display_name(db)
+async def read_appointments_joined(crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointments = await crud.read_appointments_with_id_display_name()
 
 @app.get("/appointments/", response_model=List[schemas.Appointment], tags=["appointments"])
 async def read_appointments(skip: int = 0, limit: int = 100, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
@@ -314,36 +316,36 @@ async def read_appointment(appointment_id: int, crud_helper: crud.AppointmentCRU
     return db_appointment
 
 @app.get("/appointment_with_id_display_name/{appointment_id}", response_model=schemas.AppointmentDisplay)
-def read_appointment_joined(appointment_id: int, db: Session = Depends(get_db)):
-    db_appointment = crud.read_appointment_with_id_display_name(db, appointment_id)
+async def read_appointment_joined(appointment_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointment = crud_helper.read_appointment_with_id_display_name(appointment_id)
     if db_appointment is None:
         raise HTTPException(status_code=404, detail="Appointment not found")
     return db_appointment
 
 @app.get("/appointments_by_doctor_id_with_id_display_name/{doctor_id}", response_model=List[schemas.AppointmentDisplay])
-def read_appointment_by_doctor_id_with_id_display_name(doctor_id: int, db: Session = Depends(get_db)):
-    db_appointments = crud.read_appointments_by_doctor_id_with_id_display_name(db, doctor_id=doctor_id)
+def read_appointment_by_doctor_id_with_id_display_name(doctor_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointments = crud_helper.read_appointments_by_doctor_id_with_id_display_name(doctor_id=doctor_id)
     if db_appointments is None:
         raise HTTPException(status_code=404, detail="Appointments not found")
     return db_appointments
 
 @app.get("/appointments_by_patient_id_with_id_display_name/{patient_id}", response_model=List[schemas.AppointmentDisplay])
-def read_appointment_by_patient_id_with_id_display_name(patient_id: int, db: Session = Depends(get_db)):
-    db_appointments = crud.read_appointments_by_patient_id_with_id_display_name(db, patient_id=patient_id)
+def read_appointment_by_patient_id_with_id_display_name(patient_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointments = crud_helper.read_appointments_by_patient_id_with_id_display_name(patient_id=patient_id)
     if db_appointments is None:
         raise HTTPException(status_code=404, detail="Appointments not found")
     return db_appointments
 
 @app.get("/appointments_by_staff_id_with_id_display_name/{staff_id}", response_model=List[schemas.AppointmentDisplay])
-def read_appointment_by_staff_id_with_id_display_name(staff_id: int, db: Session = Depends(get_db)):
-    db_appointments = crud.read_appointments_by_staff_id_with_id_display_name(db, staff_id=staff_id)
+def read_appointment_by_staff_id_with_id_display_name(staff_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointments = crud_helper.read_appointments_by_staff_id_with_id_display_name(staff_id=staff_id)
     if db_appointments is None:
         raise HTTPException(status_code=404, detail="Appointments not found")
     return db_appointments
 
 @app.get("/appointments_by_prescription_id_with_id_display_name/{prescription_id}", response_model=List[schemas.AppointmentDisplay])
-def read_appointment_by_prescription_id_with_id_display_name(prescription_id: int, db: Session = Depends(get_db)):
-    db_appointments = crud.read_appointments_by_prescription_id_with_id_display_name(db, prescription_id=prescription_id)
+def read_appointment_by_prescription_id_with_id_display_name(prescription_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointments = crud_helper.read_appointments_by_prescription_id_with_id_display_name(db, prescription_id=prescription_id)
     if db_appointments is None:
         raise HTTPException(status_code=404, detail="Appointments not found")
     return db_appointments

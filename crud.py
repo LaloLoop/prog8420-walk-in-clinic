@@ -8,9 +8,11 @@ from sqlalchemy import delete, select, update
 
 from sqlalchemy.orm import Session
 
-import models, schemas
+import models
+import schemas
 from users import get_async_session
 import constants as cs
+
 
 class PersonCRUD:
 
@@ -23,7 +25,7 @@ class PersonCRUD:
 
     async def read_persons(self, skip: int = 0, limit: int = 100):
         result = await self.session.execute(select(models.Person).offset(skip).limit(limit))
-        
+
         persons = result.scalars().all()
 
         return persons
@@ -32,7 +34,6 @@ class PersonCRUD:
         result = await self.session.execute(select(models.Person).where(models.Person.id == person_id))
 
         return result.scalars().first()
-
 
     async def create_person(self, person: schemas.PersonCreate):
         db_person = models.Person(**person.dict())
@@ -44,7 +45,7 @@ class PersonCRUD:
 
     async def update_person(self, person_id: int, person: schemas.PersonUpdate):
         p_values = person.dict()
-        for k,v in {**p_values}.items():
+        for k, v in {**p_values}.items():
             if v is None:
                 del p_values[k]
         await self.session.execute(update(models.Person).where(models.Person.id == person_id).values(**p_values))
@@ -55,6 +56,7 @@ class PersonCRUD:
     async def delete_person(self, person_id: int):
         await self.session.execute(delete(models.Person).where(models.Person.id == person_id))
         await self.session.commit()
+
 
 class EmployeeCRUD:
     def __init__(self, session: AsyncSession):
@@ -73,52 +75,45 @@ class EmployeeCRUD:
         result = await self.session.execute(select(models.Employee).where(models.Employee.person_id == person_id))
         return result.scalars().first()
 
-    def delete_employee(db: Session, employee_id: int):
-        db_employee = read_employee(db, employee_id)
-        if db_employee:
-            db.delete(db_employee)
-            db.commit()
-            return db_employee
-        return None
-      
-      def read_employees_by_job_title(db: Session, job_title: str):
-          return db.query(models.Employee).join(models.Job).filter(models.Job.title == job_title).all()
+    async def read_employees_by_job_title(self, job_title: str):
+        result = await self.session.execute(select(models.Employee).join(models.Job).where(models.Job.title == job_title))
+        return result.scalars().all()
 
-      def read_employees_with_id_display_name(db: Session):
-          query = db.execute(select(models.Employee.id,
-                                    models.Employee.person_id,
-                                    models.Person.email,
-                                    models.Job.id,
-                                    models.Job.title,
-                                    models.Employee.password
-                                    ).join(models.Person).join(models.Job)).all()
-          result = []
-          for row in query:
-              result.append(schemas.EmployeeDisplay(id=row[0],
-                                                    person_id=row[1],
-                                                    person_display_name=row[2],
-                                                    job_id=row[3],
-                                                    job_display_name=row[4],
-                                                    password=row[5]))
-          return result
+    async def read_employees_with_id_display_name(self):
+        query = await self.session.execute(select(models.Employee.id,
+                                models.Employee.person_id,
+                                models.Person.email,
+                                models.Job.id,
+                                models.Job.title
+                                ).join(models.Person).join(models.Job))
+        result = []
+    
+        for row in query:
+            result.append(schemas.EmployeeDisplay(id=row[0],
+                                                person_id=row[1],
+                                                person_display_name=row[2],
+                                                email=row[2],
+                                                job_id=row[3],
+                                                job_display_name=row[4],))
+        return result
 
-      def read_employee_with_id_display_name(db: Session, employee_id: int):
-          query = db.execute(select(models.Employee.id,
-                                    models.Employee.person_id,
-                                    models.Person.email,
-                                    models.Job.id,
-                                    models.Job.title,
-                                    models.Employee.password
-                                    ).join(models.Person).join(models.Job
-                                    ).where(models.Employee.id == employee_id)).first()
-          row = query
-          result = schemas.EmployeeDisplay(id=row[0],
-                                           person_id=row[1],
-                                           person_display_name=row[2],
-                                           job_id=row[3],
-                                           job_display_name=row[4],
-                                           password=row[5])
-          return result
+    def read_employee_with_id_display_name(db: Session, employee_id: int):
+        query = db.execute(select(models.Employee.id,
+                                models.Employee.person_id,
+                                models.Person.email,
+                                models.Job.id,
+                                models.Job.title,
+                                models.Employee.password
+                                ).join(models.Person).join(models.Job
+                                ).where(models.Employee.id == employee_id)).first()
+        row = query
+        result = schemas.EmployeeDisplay(id=row[0],
+                                        person_id=row[1],
+                                        person_display_name=row[2],
+                                        job_id=row[3],
+                                        job_display_name=row[4],
+                                        password=row[5])
+        return result
 
 class JobCRUD:
     def __init__(self, session: AsyncSession):
@@ -300,40 +295,40 @@ class PrescriptionCRUD:
 
         return db_prescription
       
-     def read_prescriptions_with_id_display_name(db: Session):
-          query = db.execute(select(models.Prescription.id,
-                                    models.Prescription.unit_id,
-                                    models.Unit.name,
-                                    models.Prescription.medication,
-                                    models.Prescription.quantity,
-                                    ).join(models.Unit)).all()
+    def read_prescriptions_with_id_display_name(db: Session):
+        query = db.execute(select(models.Prescription.id,
+                                models.Prescription.unit_id,
+                                models.Unit.name,
+                                models.Prescription.medication,
+                                models.Prescription.quantity,
+                                ).join(models.Unit)).all()
 
-          result = []
-          for row in query:
-              result.append(schemas.PrescriptionDisplay(id=row[0],
-                                                        unit_id=row[1],
-                                                        unit_display_name=row[2],
-                                                        medication=row[3],
-                                                        quantity=row[4]))
-          return result
-
-      def read_prescription_with_id_display_name(db: Session, prescription_id: int):
-          query = db.execute(select(models.Prescription.id,
-                                    models.Prescription.unit_id,
-                                    models.Unit.name,
-                                    models.Prescription.medication,
-                                    models.Prescription.quantity,
-                                    ).join(models.Unit
-                                    ).where(models.Prescription.id == prescription_id
-                                    )).first()
-
-          row = query
-          result = schemas.PrescriptionDisplay(id=row[0],
+        result = []
+        for row in query:
+            result.append(schemas.PrescriptionDisplay(id=row[0],
                                                     unit_id=row[1],
                                                     unit_display_name=row[2],
                                                     medication=row[3],
-                                                    quantity=row[4])
-          return result
+                                                    quantity=row[4]))
+        return result
+
+    def read_prescription_with_id_display_name(db: Session, prescription_id: int):
+        query = db.execute(select(models.Prescription.id,
+                                models.Prescription.unit_id,
+                                models.Unit.name,
+                                models.Prescription.medication,
+                                models.Prescription.quantity,
+                                ).join(models.Unit
+                                ).where(models.Prescription.id == prescription_id
+                                )).first()
+
+        row = query
+        result = schemas.PrescriptionDisplay(id=row[0],
+                                                unit_id=row[1],
+                                                unit_display_name=row[2],
+                                                medication=row[3],
+                                                quantity=row[4])
+        return result
 
     async def update_prescription(self, prescription_id: int, prescription: schemas.PrescriptionUpdate):
         p_values = prescription.dict()

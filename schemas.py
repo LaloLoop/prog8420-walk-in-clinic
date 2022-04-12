@@ -215,7 +215,7 @@ class Employee(models.BaseUser):
     class Config:
         orm_mode = True
         
-class EmployeeDisplay(EmployeeBase):
+class EmployeeDisplay(models.BaseUser):
     id: int
     person_id: int
     person_display_name: str
