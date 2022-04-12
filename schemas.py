@@ -269,16 +269,12 @@ class AppointmentBase(BaseModel):
     
     @validator('date_and_time')
     def date_and_time_must_not_be_during_lunch_hour(cls, v: datetime.datetime):
-        print("date_and_time_must_not_be_during_lunch_hour")
+
         if cs.BYPASS_DATE_AND_TIME_VALIDATION:
             return v
         else:
           starting_lunch_datetime = cs.get_todays_starting_lunch_time_datetime().replace(tzinfo=v.tzinfo)
           ending_lunch_datetime = cs.get_todays_ending_lunch_time_datetime().replace(tzinfo=v.tzinfo)
-
-          print(starting_lunch_datetime)
-          print(ending_lunch_datetime)
-          print(v)
 
           if v >= starting_lunch_datetime and v < ending_lunch_datetime:
               raise ValueError(f'{v} must not be during lunch hour, between {starting_lunch_datetime.hour} and {ending_lunch_datetime.hour} today')
@@ -299,7 +295,6 @@ class AppointmentCreate(AppointmentBase):
     # TODO: this may conflict with seeding the database 
     @validator('date_and_time')
     def date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past(cls, v):
-        print("date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past")
         if cs.BYPASS_DATE_AND_TIME_VALIDATION:
             return v
         else:
@@ -309,7 +304,6 @@ class AppointmentCreate(AppointmentBase):
 
     @validator('date_and_time')
     def date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively(cls, v):
-        print("date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively")
         if cs.BYPASS_DATE_AND_TIME_VALIDATION:
             return v
         else:
@@ -327,7 +321,6 @@ class AppointmentUpdate(AppointmentBase):
     # TODO: this may conflict with seeding the database 
     @validator('date_and_time')
     def date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past(cls, v):
-        print("date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past")
         if cs.BYPASS_DATE_AND_TIME_VALIDATION:
             return v
         else:
@@ -337,7 +330,6 @@ class AppointmentUpdate(AppointmentBase):
 
     @validator('date_and_time')
     def date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively(cls, v):
-        print("date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively")
         if cs.BYPASS_DATE_AND_TIME_VALIDATION:
             return v
         else:

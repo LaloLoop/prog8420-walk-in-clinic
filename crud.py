@@ -552,7 +552,7 @@ class AppointmentCRUD:
                                                      comments=row[12]))
         return result
 
-    def read_appointments_by_staff_id_with_id_display_name(db: Session, staff_id: int):
+    async def read_appointments_by_staff_id_with_id_display_name(self, staff_id: int):
         patients = select(models.Patient.id,
                           models.Person.email
                           ).join(models.Person).cte(name='patients')
@@ -571,7 +571,7 @@ class AppointmentCRUD:
                                models.Unit.name,
                                ).join(models.Unit).cte(name='prescriptions')
 
-        query = db.execute(select(models.Appointment.id,
+        query = await self.session.execute(select(models.Appointment.id,
                                   models.Appointment.patient_id,
                                   patients.c.email,
                                   models.Appointment.staff_id,
@@ -589,7 +589,7 @@ class AppointmentCRUD:
                                                           ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
                                                                       ).join_from(models.Appointment, prescriptions, models.Appointment.prescription_id == prescriptions.c.id
                                                                                   ).where(models.Appointment.staff_id == staff_id
-                                                                                          )).all()
+                                                                                          ))
 
         result = []
         for row in query:
