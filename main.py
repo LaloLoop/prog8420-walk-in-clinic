@@ -252,30 +252,37 @@ async def delete_prescription(prescription_id: int, crud_helper: crud.Prescripti
     return db_prescription
 
 @app.get("/appointments/", response_model=List[schemas.Appointment], tags=["appointments"])
-def read_appointments(skip: int = 0, limit: int = 100, db: Session = Depends(get_async_session)):
-    db_appointments = crud.read_appointments(db, skip=skip, limit=limit)
+async def read_appointments(skip: int = 0, limit: int = 100, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointments = await crud_helper.read_appointments(skip=skip, limit=limit)
     if db_appointments is None:
         raise HTTPException(status_code=404, detail="Appointments not found")
     return db_appointments
 
 @app.get("/appointment/{appointment_id}", response_model=schemas.Appointment, tags=["appointments"])
-def read_appointment(appointment_id: int, db: Session = Depends(get_async_session)):
-    db_appointment = crud.read_appointment(db, appointment_id)
+async def read_appointment(appointment_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointment = await crud_helper.read_appointment(appointment_id)
     if db_appointment is None:
         raise HTTPException(status_code=404, detail="Appointment not found")
     return db_appointment
 
 @app.post("/appointment/", response_model=schemas.Appointment, status_code=status.HTTP_201_CREATED, tags=["appointments"])
-def create_appointment(appointment: schemas.AppointmentCreate, db: Session = Depends(get_async_session)):
-    db_appointment = crud.read_appointment_by_person_id(db, appointment.person_id)
+async def create_appointment(appointment: schemas.AppointmentCreate, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointment = await crud_helper.read_appointment_by_patient_id(appointment.patient_id)
     if db_appointment:
-        raise HTTPException(status_code=400, detail="Appointment with this person_id already exists")
-    return crud.create_appointment(db=db, appointment=appointment)
+        raise HTTPException(status_code=400, detail="Appointment with this patient already exists")
+    return await crud_helper.create_appointment(appointment=appointment)
 
 @app.put("/appointment/{appointment_id}", response_model=schemas.Appointment, tags=["appointments"])
-def update_appointment(appointment_id: int, appointment: schemas.AppointmentUpdate, db: Session = Depends(get_async_session)):
-    return crud.update_appointment(db=db, appointment_id=appointment_id, appointment=appointment)
+async def update_appointment(appointment_id: int, appointment: schemas.AppointmentUpdate, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointment = await crud_helper.read_appointment(appointment_id)
+    if db_appointment is None:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    return await crud_helper.update_appointment(appointment_id=appointment_id, appointment=appointment)
 
 @app.delete("/appointment/{appointment_id}", response_model=schemas.Appointment, tags=["appointments"])
-def delete_appointment(appointment_id: int, db: Session = Depends(get_async_session)):
-    return crud.delete_appointment(db=db, appointment_id=appointment_id)
+async def delete_appointment(appointment_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointment = await crud_helper.read_appointment(appointment_id)
+    if db_appointment is None:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    await crud_helper.delete_appointment(appointment_id=appointment_id)
+    return db_appointment

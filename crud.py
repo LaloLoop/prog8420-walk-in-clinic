@@ -235,6 +235,47 @@ class PrescriptionCRUD:
         await self.session.execute(delete(models.Prescription).where(models.Prescription.id == prescription_id))
         await self.session.commit()
 
+class AppointmentCRUD:
+    def __init__(self, session):
+        self.session = session
+
+    async def read_appointments(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Appointment).offset(skip).limit(limit))
+
+        return result.scalars().all()
+
+    async def read_appointment(self, appointment_id: int):
+        result = await self.session.execute(select(models.Appointment).where(models.Appointment.id == appointment_id))
+
+        return result.scalars().first()
+
+    async def read_appointment_by_patient_id(self, person_id: int):
+        result = await self.session.execute(select(models.Appointment).where(models.Appointment.prescription_id == person_id))
+
+        return result.scalars().first()
+
+    async def create_appointment(self, appointment: schemas.AppointmentCreate):
+        db_appointment = models.Appointment(**appointment.dict())
+
+        self.session.add(db_appointment)
+        await self.session.commit()
+
+        return db_appointment
+
+    async def update_appointment(self, appointment_id: int, appointment: schemas.AppointmentUpdate):
+        p_values = appointment.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        await self.session.execute(update(models.Appointment).where(models.Appointment.id == appointment_id).values(**p_values))
+        await self.session.commit()
+
+        return await self.read_appointment(appointment_id)
+
+    async def delete_appointment(self, appointment_id: int):
+        await self.session.execute(delete(models.Appointment).where(models.Appointment.id == appointment_id))
+        await self.session.commit()
+
 async def person_crud(session=Depends(get_async_session)):
     yield PersonCRUD(session)
 
@@ -253,36 +294,5 @@ async def unit_crud(session=Depends(get_async_session)):
 async def prescription_crud(session=Depends(get_async_session)):
     yield PrescriptionCRUD(session)
 
-def read_appointments(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Appointment).offset(skip).limit(limit).all()
-
-def read_appointment(db: Session, appointment_id: int):
-    return db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
-
-def create_appointment(db: Session, appointment: schemas.AppointmentCreate):
-    db_appointment = models.Appointment(**appointment.dict())
-    db.add(db_appointment)
-    db.commit()
-    db.refresh(db_appointment)
-    return db_appointment
-
-def update_appointment(db: Session, appointment_id: int, appointment: schemas.AppointmentUpdate):
-    db_appointment = read_appointment(db, appointment_id)
-    if db_appointment:
-        db_appointment.doctor_id = appointment.doctor_id
-        db_appointment.patient_id = appointment.patient_id
-        db_appointment.staff_id = appointment.staff_id
-        db_appointment.prescription_id = appointment.prescription_id
-        db_appointment.date_and_time = appointment.date_and_time
-        db_appointment.comments = appointment.comments
-        db.commit()
-        return db_appointment
-    return None
-
-def delete_appointment(db: Session, appointment_id: int):
-    db_appointment = read_appointment(db, appointment_id)
-    if db_appointment:
-        db.delete(db_appointment)
-        db.commit()
-        return db_appointment
-    return None
+async def appointment_crud(session=Depends(get_async_session)):
+    yield AppointmentCRUD(session)

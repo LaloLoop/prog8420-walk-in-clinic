@@ -1,10 +1,10 @@
 import re
 import datetime
-from datetime import date
+from datetime import date, timezone
 from typing import List, Optional
 from unicodedata import name
 from fastapi_users_db_sqlalchemy import BaseUserDatabase
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, UUID4
 
 from fastapi_users import models
 
@@ -243,27 +243,18 @@ class Patient(PatientBase):
         
 class AppointmentBase(BaseModel):
     date_and_time: datetime.datetime
-    comments: Optional[str] = None
-    
-    # TODO: this may conflict with seeding the database 
-    @validator('date_and_time')
-    def date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past(cls, v):
-        if v < datetime.datetime.now():
-            raise ValueError(f'{v} must be in the future')
-        return v
+    comments: Optional[str] = ""
     
     @validator('date_and_time')
-    def date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively(cls, v):
-        opening_datetime = cs.get_todays_opening_datetime()
-        closing_datetime = cs.get_todays_closing_datetime()
-        if v < opening_datetime or v >= closing_datetime:
-            raise ValueError(f'{v} must be between {opening_datetime.hour} and {closing_datetime.hour} today')
-        return v
-    
-    @validator('date_and_time')
-    def date_and_time_must_not_be_during_lunch_hour(cls, v):
-        starting_lunch_datetime = cs.get_todays_starting_lunch_time_datetime
-        ending_lunch_datetime = cs.get_todays_ending_lunch_time_datetime
+    def date_and_time_must_not_be_during_lunch_hour(cls, v: datetime.datetime):
+        print("date_and_time_must_not_be_during_lunch_hour")
+        starting_lunch_datetime = cs.get_todays_starting_lunch_time_datetime().replace(tzinfo=v.tzinfo)
+        ending_lunch_datetime = cs.get_todays_ending_lunch_time_datetime().replace(tzinfo=v.tzinfo)
+
+        print(starting_lunch_datetime)
+        print(ending_lunch_datetime)
+        print(v)
+
         if v >= starting_lunch_datetime and v < ending_lunch_datetime:
             raise ValueError(f'{v} must not be during lunch hour, between {starting_lunch_datetime.hour} and {ending_lunch_datetime.hour} today')
         return v
@@ -275,16 +266,55 @@ class AppointmentBase(BaseModel):
         return v
 
 class AppointmentCreate(AppointmentBase):
-    pass
+    doctor_id: UUID4
+    patient_id: int
+    staff_id: UUID4
+    prescription_id: Optional[int] = None
+
+    # TODO: this may conflict with seeding the database 
+    @validator('date_and_time')
+    def date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past(cls, v):
+        print("date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past")
+        if v < datetime.datetime.now().replace(tzinfo=timezone.utc):
+            raise ValueError(f'{v} must be in the future')
+        return v
+
+    @validator('date_and_time')
+    def date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively(cls, v):
+        print("date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively")
+        opening_datetime = cs.get_todays_opening_datetime().replace(tzinfo=v.tzinfo)
+        closing_datetime = cs.get_todays_closing_datetime().replace(tzinfo=v.tzinfo)
+
+        if v < opening_datetime or v >= closing_datetime:
+            raise ValueError(f'{v} must be between {opening_datetime.hour} and {closing_datetime.hour} today')
+        return v
 
 class AppointmentUpdate(AppointmentBase):
-    pass
+    date_and_time: datetime.datetime = None
+    prescription_id: Optional[int] = None
+
+    # TODO: this may conflict with seeding the database 
+    @validator('date_and_time')
+    def date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past(cls, v):
+        print("date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past")
+        if v < datetime.datetime.now().replace(tzinfo=timezone.utc):
+            raise ValueError(f'{v} must be in the future')
+        return v
+
+    @validator('date_and_time')
+    def date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively(cls, v):
+        print("date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively")
+        opening_datetime = cs.get_todays_opening_datetime()
+        closing_datetime = cs.get_todays_closing_datetime()
+        if v < opening_datetime or v >= closing_datetime:
+            raise ValueError(f'{v} must be between {opening_datetime.hour} and {closing_datetime.hour} today')
+        return v
 
 class Appointment(AppointmentBase):
     id: int
-    doctor_id: int
+    doctor_id: UUID4
     patient_id: int
-    staff_id: int
+    staff_id: UUID4
     prescription_id: Optional[int] = None
     
     class Config:

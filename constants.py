@@ -1,5 +1,5 @@
 import datetime
-from datetime import timedelta
+from datetime import timedelta, timezone
 import math
 from pathlib import Path
 from sre_parse import SPECIAL_CHARS
@@ -82,7 +82,10 @@ def get_medication_names_from_xlsx_file():
     return medication_names
 
 def get_todays_datetime_from_time_delta(time_delta):
-    return datetime.datetime.combine(datetime.date.today(),datetime.time(0)) + time_delta
+    result = datetime.datetime.now() + time_delta
+    result = result.replace(tzinfo=timezone.utc)
+
+    return result
 
 def get_todays_opening_datetime():
     return get_todays_datetime_from_time_delta(OPENING_HOUR_TIME_DELTA)
