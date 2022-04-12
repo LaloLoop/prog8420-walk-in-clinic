@@ -179,34 +179,41 @@ async def delete_patient(patient_id: int, crud_helper: crud.PatientCRUD = Depend
     await crud_helper.delete_patient(patient_id=patient_id)
     return db_patient
 
-@app.get("/units/", response_model=List[schemas.Unit], tags=["unints"])
-def read_units(skip: int = 0, limit: int = 100, db: Session = Depends(get_async_session)):
-    db_units = crud.read_units(db, skip=skip, limit=limit)
+@app.get("/units/", response_model=List[schemas.Unit], tags=["units"])
+async def read_units(skip: int = 0, limit: int = 100, crud_helper: crud.UnitCRUD = Depends(crud.unit_crud)):
+    db_units = await crud_helper.read_units(skip=skip, limit=limit)
     if db_units is None:
         raise HTTPException(status_code=404, detail="Units not found")
     return db_units
 
-@app.get("/unit/{unit_id}", response_model=schemas.Unit, tags=["unints"])
-def read_unit(unit_id: int, db: Session = Depends(get_async_session)):
-    db_unit = crud.read_unit(db, unit_id=unit_id)
+@app.get("/unit/{unit_id}", response_model=schemas.Unit, tags=["units"])
+async def read_unit(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.unit_crud)):
+    db_unit = await crud_helper.read_unit(unit_id=unit_id)
     if db_unit is None:
         raise HTTPException(status_code=404, detail="Unit not found")
     return db_unit
 
 @app.post("/unit/", response_model=schemas.Unit, status_code=status.HTTP_201_CREATED, tags=["unints"])
-def create_unit(unit: schemas.UnitCreate, db: Session = Depends(get_async_session)):
-    db_unit = crud.read_unit_by_name(db, unit.name)
+async def create_unit(unit: schemas.UnitCreate, crud_helper: crud.UnitCRUD = Depends(crud.unit_crud)):
+    db_unit = await crud_helper.read_unit_by_name(unit.name)
     if db_unit:
         raise HTTPException(status_code=400, detail="Unit with this name already exists")
-    return crud.create_unit(db=db, unit=unit)
+    return await crud_helper.create_unit(unit=unit)
 
-@app.put("/unit/{unit_id}", response_model=schemas.Unit, tags=["unints"])
-def update_unit(unit_id: int, unit: schemas.UnitUpdate, db: Session = Depends(get_async_session)):
-    return crud.update_unit(db=db, unit_id=unit_id, unit=unit)
+@app.put("/unit/{unit_id}", response_model=schemas.Unit, tags=["units"])
+async def update_unit(unit_id: int, unit: schemas.UnitUpdate, crud_helper: crud.UnitCRUD = Depends(crud.unit_crud)):
+    db_unit = await crud_helper.read_unit(unit_id)
+    if db_unit is None:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    return await crud_helper.update_unit(unit_id=unit_id, unit=unit)
 
-@app.delete("/unit/{unit_id}", response_model=schemas.Unit, tags=["unints"])
-def delete_unit(unit_id: int, db: Session = Depends(get_async_session)):
-    return crud.delete_unit(db=db, unit_id=unit_id)
+@app.delete("/unit/{unit_id}", response_model=schemas.Unit, tags=["units"])
+async def delete_unit(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.unit_crud)):
+    db_unit = await crud_helper.read_unit(unit_id)
+    if db_unit is None:
+        raise HTTPException(status_code=404, detail="Person not found")
+    await crud_helper.delete_unit(unit_id=unit_id)
+    return db_unit
 
 @app.get("/prescriptions/", response_model=List[schemas.Prescription], tags=["prescriptions"])
 def read_prescriptions(skip: int = 0, limit: int = 100, db: Session = Depends(get_async_session)):

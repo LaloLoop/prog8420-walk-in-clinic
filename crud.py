@@ -153,6 +153,48 @@ class PatientCRUD:
         await self.session.execute(delete(models.Patient).where(models.Patient.id == patient_id))
         await self.session.commit()
 
+class UnitCRUD:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def read_units(self, skip: int = 0, limit: int = 100):
+        result = await self.session.execute(select(models.Unit).offset(skip).limit(limit))
+        
+        return result.scalars().all()
+
+    async def read_unit(self, unit_id: int):
+        result = await self.session.execute(select(models.Unit).where(models.Unit.id == unit_id))
+
+        return result.scalars().first()
+
+    async def read_unit_by_name(self, name: str):
+        result = await self.session.execute(select(models.Unit).where(models.Unit.name == name))
+
+        return result.scalars().first()
+
+    async def create_unit(self, unit: schemas.UnitCreate):
+        db_unit = models.Unit(**unit.dict())
+
+        self.session.add(db_unit)
+        await self.session.commit()
+
+        return db_unit
+
+    async def update_unit(self, unit_id: int, unit: schemas.UnitUpdate):
+        p_values = unit.dict()
+        for k,v in {**p_values}.items():
+            if v is None:
+                del p_values[k]
+        await self.session.execute(update(models.Unit).where(models.Unit.id == unit_id).values(**p_values))
+        await self.session.commit()
+
+        return await self.read_unit(unit_id)
+
+    async def delete_unit(self, unit_id: int):
+        await self.session.execute(delete(models.Unit).where(models.Unit.id == unit_id))
+        await self.session.commit()
+
+
 async def person_crud(session=Depends(get_async_session)):
     yield PersonCRUD(session)
 
@@ -165,34 +207,8 @@ async def job_crud(session=Depends(get_async_session)):
 async def patient_crud(session=Depends(get_async_session)):
     yield PatientCRUD(session)
 
-def read_units(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Unit).offset(skip).limit(limit).all()
-
-def read_unit(db: Session, unit_id: int):
-    return db.query(models.Unit).filter(models.Unit.id == unit_id).first()
-
-def create_unit(db: Session, unit: schemas.UnitCreate):
-    db_unit = models.Unit(**unit.dict())
-    db.add(db_unit)
-    db.commit()
-    db.refresh(db_unit)
-    return db_unit
-
-def update_unit(db: Session, unit_id: int, unit: schemas.UnitUpdate):
-    db_unit = read_unit(db, unit_id)
-    if db_unit:
-        db_unit.name = unit.name
-        db.commit()
-        return db_unit
-    return None
-
-def delete_unit(db: Session, unit_id: int):
-    db_unit = read_unit(db, unit_id)
-    if db_unit:
-        db.delete(db_unit)
-        db.commit()
-        return db_unit
-    return None
+async def unit_crud(session=Depends(get_async_session)):
+    yield UnitCRUD(session)
 
 def read_prescriptions(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Prescription).offset(skip).limit(limit).all()
