@@ -13,7 +13,7 @@ PG_ASYNC_URL_PREFIX = 'postgresql+asyncpg://'
 if db_url is not None and PG_URL_PREFIX in db_url:
     db_url = db_url.replace(PG_URL_PREFIX, PG_ASYNC_URL_PREFIX)
 else:
-    "sqlite+aiosqlite:///./wic.sqlite"
+    db_url = "sqlite+aiosqlite:///./wic.sqlite"
 
 SQLALCHEMY_DATABASE_URL = db_url
 
