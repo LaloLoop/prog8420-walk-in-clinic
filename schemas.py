@@ -1,9 +1,12 @@
 import re
 import datetime
-from datetime import date
+from datetime import date, timezone
 from typing import List, Optional
 from unicodedata import name
-from pydantic import BaseModel, validator
+from fastapi_users_db_sqlalchemy import BaseUserDatabase
+from pydantic import BaseModel, validator, UUID4
+
+from fastapi_users import models
 
 import constants as cs
 
@@ -85,8 +88,8 @@ class PersonBase(BaseModel):
     
     @validator('first_name', 'last_name')
     def string_must_be_alphabetic(cls, v):
-        if not v.isalpha():
-            raise ValueError(f'{v} must be alphabetic')
+        if not re.match(r"\w+", v):
+            raise ValueError(f'{v} must have alphanumeric characters')
         return v
     
     @validator('birthdate')
@@ -105,6 +108,18 @@ class PersonBase(BaseModel):
     def birthdate_must_not_be_older_than_120_years(cls, v):
         if v < date.today() - datetime.timedelta(days=120*365):
             raise ValueError(f'{v} must not be older than 120 years')
+        return v
+    
+    @validator('street')
+    def street_must_be_alphanumeric(cls, v):
+        if not re.match(r"[A-Za-z0-9 ,]*", v):
+            raise ValueError(f'{v} must be alphanumeric')
+        return v
+
+    @validator('city')
+    def city_must_be_alphanumeric(cls, v):
+        if not re.match(r"[A-Za-z0-9 ,]*", v):
+            raise ValueError(f'{v} must be alphanumeric')
         return v
     
     @validator('province')
@@ -186,32 +201,14 @@ class Job(JobBase):
     class Config:
         orm_mode = True
         
-class EmployeeBase(BaseModel):
-    password: str
-    
-    @validator('password')
-    def password_must_be_between_6_and_20_characters_contain_1_number_1_uppercase_1_lowercase_and_1_special_character(cls, v):
-        special_chars_allowed = cs.get_special_chars_allowed_for_passwords_from_xlsx_file()
-        if len(v) < 6 or len(v) > 20:
-            raise ValueError(f'{v} must be between 6 and 20 characters')
-        if not any(char.isdigit() for char in v):
-            raise ValueError(f'{v} must contain at least 1 digit')
-        if not any(char.isupper() for char in v):
-            raise ValueError(f'{v} must contain at least 1 uppercase letter')
-        if not any(char.islower() for char in v):
-            raise ValueError(f'{v} must contain at least 1 lowercase letter')
-        if not any(char in special_chars_allowed for char in v):
-            raise ValueError(f'{v} must contain at least 1 special character')
-        return v
-    
-class EmployeeCreate(EmployeeBase):
-    pass
+class EmployeeCreate(models.BaseUserCreate):
+    person_id: int
+    job_id: int
 
-class EmployeeUpdate(EmployeeBase):
-    pass
+class EmployeeUpdate(models.BaseUserUpdate):
+    job_id: int
 
-class Employee(EmployeeBase):
-    id: int
+class Employee(models.BaseUser):
     person_id: int
     job_id: int
     
@@ -228,8 +225,12 @@ class EmployeeDisplay(EmployeeBase):
     class Config:
         orm_mode = True
 
+class EmployeeDB(Employee, models.BaseUserDB):
+    pass
+
 class PatientBase(BaseModel):
     ohip: str
+    person_id: int
     
     @validator('ohip')
     def check_ohip_is_10_digits_followed_by_2_uppercase_letters(cls, v):
@@ -262,6 +263,115 @@ class PatientDisplay(PatientBase):
     class Config:
         orm_mode = True
         
+class AppointmentBase(BaseModel):
+    date_and_time: datetime.datetime
+    comments: Optional[str] = ""
+    
+    @validator('date_and_time')
+    def date_and_time_must_not_be_during_lunch_hour(cls, v: datetime.datetime):
+        print("date_and_time_must_not_be_during_lunch_hour")
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+          starting_lunch_datetime = cs.get_todays_starting_lunch_time_datetime().replace(tzinfo=v.tzinfo)
+          ending_lunch_datetime = cs.get_todays_ending_lunch_time_datetime().replace(tzinfo=v.tzinfo)
+
+          print(starting_lunch_datetime)
+          print(ending_lunch_datetime)
+          print(v)
+
+          if v >= starting_lunch_datetime and v < ending_lunch_datetime:
+              raise ValueError(f'{v} must not be during lunch hour, between {starting_lunch_datetime.hour} and {ending_lunch_datetime.hour} today')
+          return v
+    
+    @validator('comments')
+    def comments_must_be_less_than_500_characters(cls, v):
+        if len(v) > 500:
+            raise ValueError(f'{v} must be less than 500 characters')
+        return v
+      
+class AppointmentCreate(AppointmentBase):
+    doctor_id: UUID4
+    patient_id: int
+    staff_id: UUID4
+    prescription_id: Optional[int] = None
+      
+    # TODO: this may conflict with seeding the database 
+    @validator('date_and_time')
+    def date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past(cls, v):
+        print("date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past")
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+          if v < datetime.datetime.now().replace(tzinfo=timezone.utc):
+              raise ValueError(f'{v} must be in the future')
+          return v
+
+    @validator('date_and_time')
+    def date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively(cls, v):
+        print("date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively")
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+          opening_datetime = cs.get_todays_opening_datetime().replace(tzinfo=v.tzinfo)
+          closing_datetime = cs.get_todays_closing_datetime().replace(tzinfo=v.tzinfo)
+
+          if v < opening_datetime or v >= closing_datetime:
+              raise ValueError(f'{v} must be between {opening_datetime.hour} and {closing_datetime.hour} today')
+          return
+
+class AppointmentUpdate(AppointmentBase):
+    date_and_time: datetime.datetime = None
+    prescription_id: Optional[int] = None
+
+    # TODO: this may conflict with seeding the database 
+    @validator('date_and_time')
+    def date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past(cls, v):
+        print("date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past")
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+          if v < datetime.datetime.now().replace(tzinfo=timezone.utc):
+              raise ValueError(f'{v} must be in the future')
+          return v
+
+    @validator('date_and_time')
+    def date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively(cls, v):
+        print("date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively")
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+          opening_datetime = cs.get_todays_opening_datetime().replace(tzinfo=v.tzinfo)
+          closing_datetime = cs.get_todays_closing_datetime().replace(tzinfo=v.tzinfo)
+
+          if v < opening_datetime or v >= closing_datetime:
+              raise ValueError(f'{v} must be between {opening_datetime.hour} and {closing_datetime.hour} today')
+          return
+
+class Appointment(AppointmentBase):
+    id: int
+    doctor_id: UUID4
+    patient_id: int
+    staff_id: UUID4
+    prescription_id: Optional[int] = None
+    
+    class Config:
+        orm_mode = True
+
+class AppointmentDisplay(AppointmentBase):
+    id: int
+    patient_id: int
+    patient_display_name: str
+    staff_id: UUID4
+    staff_display_name: str
+    doctor_id: UUID4
+    doctor_display_name: str
+    prescription_id: Optional[int] = None
+    prescription_display_name: Optional[str] = None
+    
+    class Config:
+        orm_mode = True
+        
 class UnitBase(BaseModel):
     name: str
     
@@ -286,6 +396,7 @@ class Unit(UnitBase):
 class PrescriptionBase(BaseModel):
     medication: str
     quantity: int
+    unit_id: int
     
     @validator('medication')
     def medication_must_be_less_than_100_characters(cls, v):
@@ -307,7 +418,6 @@ class PrescriptionUpdate(PrescriptionBase):
 
 class Prescription(PrescriptionBase):
     id: int
-    unit_id: int
     
     class Config:
         orm_mode = True
@@ -320,75 +430,3 @@ class PrescriptionDisplay(PrescriptionBase):
     class Config:
         orm_mode = True
         
-class AppointmentBase(BaseModel):
-    date_and_time: datetime.datetime
-    comments: Optional[str] = None
-    
-    # TODO: this may conflict with seeding the database 
-    @validator('date_and_time')
-    def date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past(cls, v):
-        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
-            return v
-        else:
-            if v < datetime.datetime.now():
-                raise ValueError(f'{v} must be in the future')
-            return v
-        
-    
-    @validator('date_and_time')
-    def date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively(cls, v):
-        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
-            return v
-        else:
-            opening_datetime = cs.get_todays_opening_datetime()
-            closing_datetime = cs.get_todays_closing_datetime()
-            if v < opening_datetime or v >= closing_datetime:
-                raise ValueError(f'{v} must be between {opening_datetime.hour} and {closing_datetime.hour} today')
-            return v
-    
-    @validator('date_and_time')
-    def date_and_time_must_not_be_during_lunch_hour(cls, v):
-        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
-            return v
-        else:
-            starting_lunch_datetime = cs.get_todays_starting_lunch_time_datetime
-            ending_lunch_datetime = cs.get_todays_ending_lunch_time_datetime
-            if v >= starting_lunch_datetime and v < ending_lunch_datetime:
-                raise ValueError(f'{v} must not be during lunch hour, between {starting_lunch_datetime.hour} and {ending_lunch_datetime.hour} today')
-            return v
-    
-    @validator('comments')
-    def comments_must_be_less_than_500_characters(cls, v):
-        if len(v) > 500:
-            raise ValueError(f'{v} must be less than 500 characters')
-        return v
-
-class AppointmentCreate(AppointmentBase):
-    pass
-
-class AppointmentUpdate(AppointmentBase):
-    pass
-
-class Appointment(AppointmentBase):
-    id: int
-    patient_id: int
-    staff_id: int
-    doctor_id: int
-    prescription_id: Optional[int] = None
-    
-    class Config:
-        orm_mode = True
-
-class AppointmentDisplay(AppointmentBase):
-    id: int
-    patient_id: int
-    patient_display_name: str
-    staff_id: int
-    staff_display_name: str
-    doctor_id: int
-    doctor_display_name: str
-    prescription_id: Optional[int] = None
-    prescription_display_name: Optional[str] = None
-    
-    class Config:
-        orm_mode = True

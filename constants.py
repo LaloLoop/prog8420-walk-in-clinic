@@ -1,5 +1,5 @@
 import datetime
-from datetime import timedelta
+from datetime import timedelta, timezone
 import math
 from pathlib import Path
 from sre_parse import SPECIAL_CHARS
@@ -18,6 +18,7 @@ CLOSING_HOUR_TIME_DELTA = timedelta(hours=17)
 APPOINTMENT_LENGTH_TIME_DELTA = timedelta(minutes=30)
 
 FAKER_LOCALE = 'en_CA'
+FAKER_SEED = 34003
 
 STRICT_POSTAL_CODE_CAPITALIZATION = False
 FIX_SPACE_IN_POSTAL_CODE = True
@@ -85,7 +86,10 @@ def get_medication_names_from_xlsx_file():
     return medication_names
 
 def get_todays_datetime_from_time_delta(time_delta):
-    return datetime.datetime.combine(datetime.date.today(),datetime.time(0)) + time_delta
+    result = datetime.datetime.now() + time_delta
+    result = result.replace(tzinfo=timezone.utc)
+
+    return result
 
 def get_todays_opening_datetime():
     return get_todays_datetime_from_time_delta(OPENING_HOUR_TIME_DELTA)
@@ -99,12 +103,11 @@ def get_todays_starting_lunch_time_datetime():
 def get_todays_ending_lunch_time_datetime():
     return get_todays_datetime_from_time_delta(END_LUNCH_TIME_DELTA)
 
-def get_number_of_appointments_available_today(session):
+def get_number_of_appointments_available_today(num_doctors):
     time_available_in_day_time_delta = CLOSING_HOUR_TIME_DELTA - OPENING_HOUR_TIME_DELTA - \
                                        (END_LUNCH_TIME_DELTA - START_LUNCH_TIME_DELTA)
    
-    doctors = session.query(Employee).join(Job).filter(Job.title == DOCTOR_TITLE).all()
-    return math.floor(time_available_in_day_time_delta.seconds * len(doctors) / APPOINTMENT_LENGTH_TIME_DELTA.seconds)
+    return math.floor(time_available_in_day_time_delta.seconds * num_doctors / APPOINTMENT_LENGTH_TIME_DELTA.seconds)
 
 
 #### VVVV BELOW IS UNIMPLEMENTED/BRAINSTORMING ONLY VVVV ####
