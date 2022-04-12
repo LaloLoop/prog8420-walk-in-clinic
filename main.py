@@ -266,8 +266,8 @@ async def read_prescription(prescription_id: int, crud_helper: crud.Prescription
         raise HTTPException(status_code=404, detail="Prescription not found")
     return db_prescription
 
- 
-@app.get("/prescription_with_id_display_name/{prescription_id}", response_model=schemas.PrescriptionDisplay)
+
+@app.get("/prescription_with_id_display_name/{prescription_id}", response_model=schemas.PrescriptionDisplay, tags=["prescriptions"])
 async def read_prescription_joined(prescription_id: int, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
     db_prescription = await crud_helper.read_prescription_with_id_display_name(prescription_id=prescription_id)
     if db_prescription is None:

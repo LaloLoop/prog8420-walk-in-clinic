@@ -313,17 +313,17 @@ class PrescriptionCRUD:
                                                     quantity=row[4]))
         return result
 
-    def read_prescription_with_id_display_name(db: Session, prescription_id: int):
-        query = db.execute(select(models.Prescription.id,
+    async def read_prescription_with_id_display_name(self, prescription_id: int):
+        query = await self.session.execute(select(models.Prescription.id,
                                 models.Prescription.unit_id,
                                 models.Unit.name,
                                 models.Prescription.medication,
                                 models.Prescription.quantity,
                                 ).join(models.Unit
                                 ).where(models.Prescription.id == prescription_id
-                                )).first()
+                                ))
 
-        row = query
+        row = query.first()
         result = schemas.PrescriptionDisplay(id=row[0],
                                                 unit_id=row[1],
                                                 unit_display_name=row[2],
