@@ -2,6 +2,7 @@ aiosqlite==0.17.0
 anyio==3.5.0
 asciimatics==1.13.0
 asgiref==3.5.0
+asyncpg==0.25.0
 attrs==21.4.0
 autopep8==1.6.0
 bcrypt==3.2.0
@@ -19,6 +20,7 @@ fastapi-users==9.3.0
 fastapi-users-db-sqlalchemy==3.0.0
 future==0.18.2
 greenlet==1.1.2
+gunicorn==20.1.0
 h11==0.13.0
 idna==3.3
 iniconfig==1.1.1
