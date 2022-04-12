@@ -324,9 +324,9 @@ async def read_appointment_joined(appointment_id: int, crud_helper: crud.Appoint
         raise HTTPException(status_code=404, detail="Appointment not found")
     return db_appointment
 
-@app.get("/appointments_by_doctor_id_with_id_display_name/{doctor_id}", response_model=List[schemas.AppointmentDisplay])
-def read_appointment_by_doctor_id_with_id_display_name(doctor_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
-    db_appointments = crud_helper.read_appointments_by_doctor_id_with_id_display_name(doctor_id=doctor_id)
+@app.get("/appointments_by_doctor_id_with_id_display_name/{doctor_id}", response_model=List[schemas.AppointmentDisplay], tags=["appointments"])
+async def read_appointment_by_doctor_id_with_id_display_name(doctor_id: UUID4, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    db_appointments = await crud_helper.read_appointments_by_doctor_id_with_id_display_name(doctor_id=doctor_id)
     if db_appointments is None:
         raise HTTPException(status_code=404, detail="Appointments not found")
     return db_appointments
