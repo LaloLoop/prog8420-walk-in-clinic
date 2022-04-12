@@ -178,19 +178,19 @@ class PatientCRUD:
         await self.session.commit()
 
         return db_patient
-      
-    def read_patients_with_id_display_name(db: Session):
-        query = db.execute(select(models.Patient.id,
-                                  models.Patient.person_id,
-                                  models.Person.email,
-                                  models.Patient.ohip\
-                                  ).join(models.Person)).all()
+
+    async def read_patients_with_id_display_name(self):
+        query = await self.session.execute(select(models.Patient.id,
+                                    models.Patient.person_id,
+                                    models.Person.email,
+                                    models.Patient.ohip\
+                                    ).join(models.Person))
         result = []
         for row in query:
             result.append(schemas.PatientDisplay(id=row[0],
-                                                 person_id=row[1],
-                                                 person_display_name=row[2],
-                                                 ohip=row[3]))
+                                                    person_id=row[1],
+                                                    person_display_name=row[2],
+                                                    ohip=row[3]))
         return result
     
     def read_patient_with_id_display_name(db: Session, patient_id: int):
