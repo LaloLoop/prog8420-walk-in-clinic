@@ -663,6 +663,23 @@ class AppointmentCRUD:
                                                      date_and_time=row[11],
                                                      comments=row[12]))
         return result
+    
+    async def read_available_appointment_datetimes_by_doctor_id(self, doctor_id: UUID4):
+        doctors = select(models.Employee.id,
+                         models.Person.email
+                         ).join(models.Person
+                                ).join(models.Job
+                                       ).where(models.Job.title == cs.DOCTOR_TITLE).cte(name='doctors')
+
+        query = await self.session.execute(select(models.Appointment.date_and_time
+                          ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
+                          ).where(models.Appointment.doctor_id == doctor_id))
+
+        doctor_appointment_datetimes = set([tuple_[0] for tuple_ in query])
+        
+        all_possible_appointment_datetimes = set(cs.get_list_of_possible_available_appointment_datetimes_available_per_one_doctor_per_day())
+        
+        return sorted(list(all_possible_appointment_datetimes - doctor_appointment_datetimes))
 
     async def read_appointments_by_prescription_id_with_id_display_name(self, prescription_id: int):
         patients = select(models.Patient.id,

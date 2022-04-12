@@ -113,19 +113,10 @@ def seed_appointments(faker):
 
                 doctor_appointment_date_and_times = sorted([tuple_[0] for tuple_ in query])
                 
-                #for row in query:
-                #    if doctor_id_to_date_and_times[row[0]] is None:
-                #        doctor_id_to_date_and_times[row[0]] = {}
-                #    doctor_id_to_date_and_times[row[0]][row[1]] = True
-                    
-                #current_doctors_date_and_times = sorted(doctor_id_to_date_and_times[doctor.id].keys())
-                
-                # only add appointments if there are no appointments for the given doctor on the same day
-                if len(doctor_appointment_date_and_times) < cs.get_number_of_possible_appointments_available_per_one_doctor():
+                if len(doctor_appointment_date_and_times) < cs.get_number_of_possible_appointments_available_per_one_doctor_per_day():
                     if doctor_appointment_date_and_times == []:
                         available_date_and_time = cs.get_todays_opening_datetime()
                     else:
-                        
                         available_date_and_time = doctor_appointment_date_and_times[-1] + cs.APPOINTMENT_LENGTH_TIME_DELTA
                         
                         if cs.get_todays_starting_lunch_time_datetime() <= available_date_and_time < cs.get_todays_ending_lunch_time_datetime():

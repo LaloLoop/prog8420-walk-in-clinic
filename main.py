@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -104,6 +105,7 @@ async def delete_person(person_id: int, crud_helper: crud.PersonCRUD = Depends(c
     await crud_helper.delete_person(person_id=person_id)
     return db_person
 
+
 @app.get("/jobs/", response_model=List[schemas.Job], tags=["job"])
 async def read_jobs(skip: int = 0, limit: int = 100, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
     db_jobs = await crud_helper.read_jobs(skip=skip, limit=limit)
@@ -134,6 +136,7 @@ async def delete_job(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_c
     await crud_helper.delete_job(job_id=job_id)
     return db_person
 
+
 @app.get("/employees_with_id_display_name/", response_model=List[schemas.EmployeeDisplay], tags=["employee"])
 async def read_employees_joined(crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
     db_employees = await crud_helper.read_employees_with_id_display_name()
@@ -161,6 +164,7 @@ async def read_employee_joined(employee_id: UUID4, crud_helper: crud.EmployeeCRU
         raise HTTPException(status_code=404, detail="Employee not found")
     return db_employee
 
+
 @app.get("/patients_with_id_display_name/", response_model=List[schemas.PatientDisplay], tags=["patient"])
 async def read_patients_joined(crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
     return await crud_helper.read_patients_with_id_display_name()
@@ -179,14 +183,12 @@ async def read_patient(patient_id: int, crud_helper: crud.PatientCRUD = Depends(
         raise HTTPException(status_code=404, detail="Patient not found")
     return db_patient
 
-
 @app.get("/patient_with_id_display_name/{patient_id}", response_model=schemas.PatientDisplay, tags=["patient"])
 async def read_patient_joined(patient_id: int, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
     db_patient = await crud_helper.read_patient_with_id_display_name(patient_id=patient_id)
     if db_patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
     return db_patient
-
 
 @app.post("/patient/", response_model=schemas.Patient, status_code=status.HTTP_201_CREATED, tags=["patient"])
 async def create_patient(patient: schemas.PatientCreate, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
@@ -201,7 +203,6 @@ async def update_patient(patient_id: int, patient: schemas.PatientUpdate, crud_h
     if db_patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
     return await crud_helper.update_patient(patient_id=patient_id, patient=patient)
-
 
 @app.delete("/patient/{patient_id}", response_model=schemas.Patient, tags=["patient"])
 async def delete_patient(patient_id: int, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
@@ -226,7 +227,7 @@ async def read_unit(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.unit
         raise HTTPException(status_code=404, detail="Unit not found")
     return db_unit
 
-@app.post("/unit/", response_model=schemas.Unit, status_code=status.HTTP_201_CREATED, tags=["unints"])
+@app.post("/unit/", response_model=schemas.Unit, status_code=status.HTTP_201_CREATED, tags=["units"])
 async def create_unit(unit: schemas.UnitCreate, crud_helper: crud.UnitCRUD = Depends(crud.unit_crud)):
     db_unit = await crud_helper.read_unit_by_name(unit.name)
     if db_unit:
@@ -318,6 +319,11 @@ async def read_appointment(appointment_id: int, crud_helper: crud.AppointmentCRU
     if db_appointment is None:
         raise HTTPException(status_code=404, detail="Appointment not found")
     return db_appointment
+
+@app.get("/appointment_available_date_and_times/{doctor_id}", response_model=List[datetime], tags=["appointments"])
+async def read_appointment_available_date_and_times(doctor_id: UUID4, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
+    available_datetimes_for_doctor = await crud_helper.read_available_appointment_datetimes_by_doctor_id(doctor_id=doctor_id)
+    return available_datetimes_for_doctor
 
 @app.get("/appointment_with_id_display_name/{appointment_id}", response_model=schemas.AppointmentDisplay, tags=["appointments"])
 async def read_appointment_joined(appointment_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
