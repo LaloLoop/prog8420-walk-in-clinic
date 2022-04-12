@@ -295,14 +295,14 @@ class PrescriptionCRUD:
         await self.session.commit()
 
         return db_prescription
-      
-    def read_prescriptions_with_id_display_name(db: Session):
-        query = db.execute(select(models.Prescription.id,
+
+    async def read_prescriptions_with_id_display_name(self):
+        query = await self.session.execute(select(models.Prescription.id,
                                 models.Prescription.unit_id,
                                 models.Unit.name,
                                 models.Prescription.medication,
                                 models.Prescription.quantity,
-                                ).join(models.Unit)).all()
+                                ).join(models.Unit))
 
         result = []
         for row in query:

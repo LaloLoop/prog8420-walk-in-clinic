@@ -247,9 +247,10 @@ async def delete_unit(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.un
     return db_unit
 
 
-@app.get("/prescriptions_with_id_display_name/", response_model=List[schemas.PrescriptionDisplay])
+@app.get("/prescriptions_with_id_display_name/", response_model=List[schemas.PrescriptionDisplay], tags=["prescriptions"])
 async def read_prescriptions_joined(crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
-    db_prescriptions = await crud.read_prescriptions_with_id_display_name()
+    db_prescriptions = await crud_helper.read_prescriptions_with_id_display_name()
+    return db_prescriptions
 
 @app.get("/prescriptions/", response_model=List[schemas.Prescription], tags=["prescriptions"])
 async def read_prescriptions(skip: int = 0, limit: int = 100, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
