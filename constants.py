@@ -46,7 +46,7 @@ JOB_SPECIALTIES =   ADMIN_SPECIALTIES[0:NUM_ADMIN] + \
                     STAFF_SPECIALTIES[0:NUM_STAFF] + \
                     DOCTOR_SPECIALTIES[0:NUM_DOCTORS]
                     
-INIT_NUM_PATIENTS = 40
+INIT_NUM_PATIENTS = 60
 NUM_PRESCRIPTIONS = INIT_NUM_PATIENTS
 
 UNIT_NAMES = ['mg','mL','g','oz']
@@ -99,6 +99,9 @@ def get_todays_starting_lunch_time_datetime():
 
 def get_todays_ending_lunch_time_datetime():
     return get_todays_datetime_from_time_delta(END_LUNCH_TIME_DELTA)
+
+def get_number_of_possible_appointments_available_per_one_doctor():
+    return (CLOSING_HOUR_TIME_DELTA - OPENING_HOUR_TIME_DELTA - (END_LUNCH_TIME_DELTA - START_LUNCH_TIME_DELTA)) / APPOINTMENT_LENGTH_TIME_DELTA
 
 def get_number_of_appointments_available_today(num_doctors):
     time_available_in_day_time_delta = CLOSING_HOUR_TIME_DELTA - OPENING_HOUR_TIME_DELTA - \
