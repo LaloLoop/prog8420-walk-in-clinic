@@ -216,33 +216,40 @@ async def delete_unit(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.un
     return db_unit
 
 @app.get("/prescriptions/", response_model=List[schemas.Prescription], tags=["prescriptions"])
-def read_prescriptions(skip: int = 0, limit: int = 100, db: Session = Depends(get_async_session)):
-    db_prescriptions = crud.read_prescriptions(db, skip=skip, limit=limit)
+async def read_prescriptions(skip: int = 0, limit: int = 100, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
+    db_prescriptions = await crud_helper.read_prescriptions(skip=skip, limit=limit)
     if db_prescriptions is None:
         raise HTTPException(status_code=404, detail="Prescriptions not found")
     return db_prescriptions
 
 @app.get("/prescription/{prescription_id}", response_model=schemas.Prescription, tags=["prescriptions"])
-def read_prescription(prescription_id: int, db: Session = Depends(get_async_session)):
-    db_prescription = crud.read_prescription(db, prescription_id=prescription_id)
+async def read_prescription(prescription_id: int, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
+    db_prescription = await crud_helper.read_prescription(prescription_id=prescription_id)
     if db_prescription is None:
         raise HTTPException(status_code=404, detail="Prescription not found")
     return db_prescription
 
 @app.post("/prescription/", response_model=schemas.Prescription, status_code=status.HTTP_201_CREATED, tags=["prescriptions"])
-def create_prescription(prescription: schemas.PrescriptionCreate, db: Session = Depends(get_async_session)):
-    db_prescription = crud.read_prescription_by_name(db, prescription.name)
+async def create_prescription(prescription: schemas.PrescriptionCreate, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
+    db_prescription = await crud_helper.read_prescription_by_name(prescription.medication)
     if db_prescription:
         raise HTTPException(status_code=400, detail="Prescription with this name already exists")
-    return crud.create_prescription(db=db, prescription=prescription)
+    return await crud_helper.create_prescription(prescription=prescription)
 
 @app.put("/prescription/{prescription_id}", response_model=schemas.Prescription, tags=["prescriptions"])
-def update_prescription(prescription_id: int, prescription: schemas.PrescriptionUpdate, db: Session = Depends(get_async_session)):
-    return crud.update_prescription(db=db, prescription_id=prescription_id, prescription=prescription)
+async def update_prescription(prescription_id: int, prescription: schemas.PrescriptionUpdate, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
+    db_prescription = await crud_helper.read_prescription(prescription_id)
+    if db_prescription is None:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    return await crud_helper.update_prescription(prescription_id=prescription_id, prescription=prescription)
 
 @app.delete("/prescription/{prescription_id}", response_model=schemas.Prescription, tags=["prescriptions"])
-def delete_prescription(prescription_id: int, db: Session = Depends(get_async_session)):
-    return crud.delete_prescription(db=db, prescription_id=prescription_id)
+async def delete_prescription(prescription_id: int, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
+    db_prescription = await crud_helper.read_prescription(prescription_id)
+    if db_prescription is None:
+        raise HTTPException(status_code=404, detail="Person not found")
+    await crud_helper.delete_prescription(prescription_id=prescription_id)
+    return db_prescription
 
 @app.get("/appointments/", response_model=List[schemas.Appointment], tags=["appointments"])
 def read_appointments(skip: int = 0, limit: int = 100, db: Session = Depends(get_async_session)):

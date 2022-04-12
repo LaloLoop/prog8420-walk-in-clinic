@@ -314,6 +314,7 @@ class Unit(UnitBase):
 class PrescriptionBase(BaseModel):
     medication: str
     quantity: int
+    unit_id: int
     
     @validator('medication')
     def medication_must_be_less_than_100_characters(cls, v):
@@ -335,7 +336,6 @@ class PrescriptionUpdate(PrescriptionBase):
 
 class Prescription(PrescriptionBase):
     id: int
-    unit_id: int
     
     class Config:
         orm_mode = True
