@@ -214,6 +214,16 @@ class Employee(models.BaseUser):
     
     class Config:
         orm_mode = True
+        
+class EmployeeDisplay(EmployeeBase):
+    id: int
+    person_id: int
+    person_display_name: str
+    job_id: int
+    job_display_name: str
+    
+    class Config:
+        orm_mode = True
 
 class EmployeeDB(Employee, models.BaseUserDB):
     pass
@@ -238,6 +248,18 @@ class PatientUpdate(PatientBase):
     pass
 
 class Patient(PatientBase):
+    id: int
+    person_id: int
+    person_display_name: str
+    
+    class Config:
+        orm_mode = True
+        
+class PatientDisplay(PatientBase):
+    id: int
+    person_id: int
+    person_display_name: str
+    
     class Config:
         orm_mode = True
         
@@ -248,46 +270,55 @@ class AppointmentBase(BaseModel):
     @validator('date_and_time')
     def date_and_time_must_not_be_during_lunch_hour(cls, v: datetime.datetime):
         print("date_and_time_must_not_be_during_lunch_hour")
-        starting_lunch_datetime = cs.get_todays_starting_lunch_time_datetime().replace(tzinfo=v.tzinfo)
-        ending_lunch_datetime = cs.get_todays_ending_lunch_time_datetime().replace(tzinfo=v.tzinfo)
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+          starting_lunch_datetime = cs.get_todays_starting_lunch_time_datetime().replace(tzinfo=v.tzinfo)
+          ending_lunch_datetime = cs.get_todays_ending_lunch_time_datetime().replace(tzinfo=v.tzinfo)
 
-        print(starting_lunch_datetime)
-        print(ending_lunch_datetime)
-        print(v)
+          print(starting_lunch_datetime)
+          print(ending_lunch_datetime)
+          print(v)
 
-        if v >= starting_lunch_datetime and v < ending_lunch_datetime:
-            raise ValueError(f'{v} must not be during lunch hour, between {starting_lunch_datetime.hour} and {ending_lunch_datetime.hour} today')
-        return v
+          if v >= starting_lunch_datetime and v < ending_lunch_datetime:
+              raise ValueError(f'{v} must not be during lunch hour, between {starting_lunch_datetime.hour} and {ending_lunch_datetime.hour} today')
+          return v
     
     @validator('comments')
     def comments_must_be_less_than_500_characters(cls, v):
         if len(v) > 500:
             raise ValueError(f'{v} must be less than 500 characters')
         return v
-
+      
 class AppointmentCreate(AppointmentBase):
     doctor_id: UUID4
     patient_id: int
     staff_id: UUID4
     prescription_id: Optional[int] = None
-
+      
     # TODO: this may conflict with seeding the database 
     @validator('date_and_time')
     def date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past(cls, v):
         print("date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past")
-        if v < datetime.datetime.now().replace(tzinfo=timezone.utc):
-            raise ValueError(f'{v} must be in the future')
-        return v
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+          if v < datetime.datetime.now().replace(tzinfo=timezone.utc):
+              raise ValueError(f'{v} must be in the future')
+          return v
 
     @validator('date_and_time')
     def date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively(cls, v):
         print("date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively")
-        opening_datetime = cs.get_todays_opening_datetime().replace(tzinfo=v.tzinfo)
-        closing_datetime = cs.get_todays_closing_datetime().replace(tzinfo=v.tzinfo)
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+          opening_datetime = cs.get_todays_opening_datetime().replace(tzinfo=v.tzinfo)
+          closing_datetime = cs.get_todays_closing_datetime().replace(tzinfo=v.tzinfo)
 
-        if v < opening_datetime or v >= closing_datetime:
-            raise ValueError(f'{v} must be between {opening_datetime.hour} and {closing_datetime.hour} today')
-        return v
+          if v < opening_datetime or v >= closing_datetime:
+              raise ValueError(f'{v} must be between {opening_datetime.hour} and {closing_datetime.hour} today')
+          return
 
 class AppointmentUpdate(AppointmentBase):
     date_and_time: datetime.datetime = None
@@ -297,18 +328,25 @@ class AppointmentUpdate(AppointmentBase):
     @validator('date_and_time')
     def date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past(cls, v):
         print("date_and_time_must_be_in_the_future_or_less_than_1_appointment_length_in_the_past")
-        if v < datetime.datetime.now().replace(tzinfo=timezone.utc):
-            raise ValueError(f'{v} must be in the future')
-        return v
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+          if v < datetime.datetime.now().replace(tzinfo=timezone.utc):
+              raise ValueError(f'{v} must be in the future')
+          return v
 
     @validator('date_and_time')
     def date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively(cls, v):
         print("date_and_time_must_not_be_before_or_after_opening_and_closing_hours_respectively")
-        opening_datetime = cs.get_todays_opening_datetime()
-        closing_datetime = cs.get_todays_closing_datetime()
-        if v < opening_datetime or v >= closing_datetime:
-            raise ValueError(f'{v} must be between {opening_datetime.hour} and {closing_datetime.hour} today')
-        return v
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+          opening_datetime = cs.get_todays_opening_datetime().replace(tzinfo=v.tzinfo)
+          closing_datetime = cs.get_todays_closing_datetime().replace(tzinfo=v.tzinfo)
+
+          if v < opening_datetime or v >= closing_datetime:
+              raise ValueError(f'{v} must be between {opening_datetime.hour} and {closing_datetime.hour} today')
+          return
 
 class Appointment(AppointmentBase):
     id: int
@@ -320,6 +358,20 @@ class Appointment(AppointmentBase):
     class Config:
         orm_mode = True
 
+class AppointmentDisplay(AppointmentBase):
+    id: int
+    patient_id: int
+    patient_display_name: str
+    staff_id: UUID4
+    staff_display_name: str
+    doctor_id: UUID4
+    doctor_display_name: str
+    prescription_id: Optional[int] = None
+    prescription_display_name: Optional[str] = None
+    
+    class Config:
+        orm_mode = True
+        
 class UnitBase(BaseModel):
     name: str
     
@@ -340,7 +392,7 @@ class Unit(UnitBase):
     
     class Config:
         orm_mode = True
-        
+
 class PrescriptionBase(BaseModel):
     medication: str
     quantity: int
@@ -369,3 +421,12 @@ class Prescription(PrescriptionBase):
     
     class Config:
         orm_mode = True
+        
+class PrescriptionDisplay(PrescriptionBase):
+    id: int
+    unit_id: int
+    unit_display_name: str
+    
+    class Config:
+        orm_mode = True
+        

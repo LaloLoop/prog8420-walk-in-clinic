@@ -6,6 +6,8 @@ from sre_parse import SPECIAL_CHARS
 from openpyxl import load_workbook
 from models import Appointment, Employee, Job
 
+BYPASS_DATE_AND_TIME_VALIDATION = True
+
 OPENING_HOUR_TIME_DELTA = timedelta(hours=8)
 
 START_LUNCH_TIME_DELTA = timedelta(hours=12)
@@ -53,9 +55,11 @@ PRESCRIPTION_QUANTITIES = [1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 100, 200, 300, 400
 
 PROVINCES = ['AB','BC','MB','NB','NL','NS','NT','NU','ON','PE','QC','SK','YT']
 
+def get_prescription_display_name(medication_name, quantity, unit_name):
+    return f'{medication_name} ({str(quantity)} {unit_name})'
 
 def generate_10_digit_with_2_letter_version_code_OHIP_number(faker):
-    return str(faker.random_number(digits=10)) + faker.random_letter().upper() + faker.random_letter().upper()
+    return "".join([str(faker.random_digit()) for i in range(0,10)]) + faker.random_letter().upper() + faker.random_letter().upper()
 
 def get_special_chars_allowed_for_passwords_from_xlsx_file():
     wb = load_workbook(filename = SPECIAL_CHARS_ALLOWED_IN_PASSWORD_XLSX_FILEPATH)
