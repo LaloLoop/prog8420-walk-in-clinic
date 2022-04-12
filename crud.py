@@ -381,43 +381,44 @@ class AppointmentCRUD:
     def read_appointments_by_prescription_id(db: Session, prescription_id: int):
         return db.execute(select(models.Appointment).where(models.Appointment.prescription_id == prescription_id)).all()
 
-    def read_appointments_with_id_display_name(db: Session):
+    async def read_appointments_with_id_display_name(self):
         patients = select(models.Patient.id,
-                          models.Person.email
-                          ).join(models.Person).cte(name='patients')
+                        models.Person.email
+                        ).join(models.Person).cte(name='patients')
         staffs =  select(models.Employee.id,
-                         models.Person.email
-                         ).join(models.Person).join(models.Job
-                         ).where(models.Job.title == cs.STAFF_TITLE).cte(name='staffs')
+                        models.Person.email
+                        ).join(models.Person).join(models.Job
+                        ).where(models.Job.title == cs.STAFF_TITLE).cte(name='staffs')
         doctors = select(models.Employee.id,
-                         models.Person.email
-                         ).join(models.Person
-                         ).join(models.Job
-                         ).where(models.Job.title == cs.DOCTOR_TITLE).cte(name='doctors')
+                        models.Person.email
+                        ).join(models.Person
+                        ).join(models.Job
+                        ).where(models.Job.title == cs.DOCTOR_TITLE).cte(name='doctors')
         prescriptions = select(models.Prescription.id,
-                               models.Prescription.medication,
-                               models.Prescription.quantity,
-                               models.Unit.name,
-                               ).join(models.Unit).cte(name='prescriptions')
+                            models.Prescription.medication,
+                            models.Prescription.quantity,
+                            models.Unit.name,
+                            ).join(models.Unit).cte(name='prescriptions')
 
-        query = db.execute(select(models.Appointment.id,
-                                  models.Appointment.patient_id,
-                                  patients.c.email,
-                                  models.Appointment.staff_id,
-                                  staffs.c.email,
-                                  models.Appointment.doctor_id,
-                                  doctors.c.email,
-                                  models.Appointment.prescription_id,
-                                  prescriptions.c.medication,
-                                  prescriptions.c.quantity,
-                                  prescriptions.c.name, # unit name
-                                  models.Appointment.date_and_time,
-                                  models.Appointment.comments,
-            ).join_from(models.Appointment, patients, models.Appointment.patient_id == patients.c.id
-            ).join_from(models.Appointment, staffs, models.Appointment.staff_id == staffs.c.id
-            ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
-            ).join_from(models.Appointment, prescriptions, models.Appointment.prescription_id == prescriptions.c.id
-            )).all()
+        query = await self.session.execute(select(
+            models.Appointment.id,
+            models.Appointment.patient_id,
+            patients.c.email,
+            models.Appointment.staff_id,
+            staffs.c.email,
+            models.Appointment.doctor_id,
+            doctors.c.email,
+            models.Appointment.prescription_id,
+            prescriptions.c.medication,
+            prescriptions.c.quantity,
+            prescriptions.c.name, # unit name
+            models.Appointment.date_and_time,
+            models.Appointment.comments,
+        ).join_from(models.Appointment, patients, models.Appointment.patient_id == patients.c.id
+        ).join_from(models.Appointment, staffs, models.Appointment.staff_id == staffs.c.id
+        ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
+        ).join_from(models.Appointment, prescriptions, models.Appointment.prescription_id == prescriptions.c.id
+        ))
 
         result = []
         for row in query:

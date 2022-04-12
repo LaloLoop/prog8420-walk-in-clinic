@@ -298,9 +298,10 @@ async def delete_prescription(prescription_id: int, crud_helper: crud.Prescripti
     return db_prescription
 
 
-@app.get("/appointments_with_id_display_name/", response_model=List[schemas.AppointmentDisplay])
+@app.get("/appointments_with_id_display_name/", response_model=List[schemas.AppointmentDisplay], tags=["appointments"])
 async def read_appointments_joined(crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
-    db_appointments = await crud.read_appointments_with_id_display_name()
+    db_appointments = await crud_helper.read_appointments_with_id_display_name()
+    return db_appointments
 
 @app.get("/appointments/", response_model=List[schemas.Appointment], tags=["appointments"])
 async def read_appointments(skip: int = 0, limit: int = 100, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
