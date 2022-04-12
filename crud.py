@@ -193,14 +193,14 @@ class PatientCRUD:
                                                     ohip=row[3]))
         return result
     
-    def read_patient_with_id_display_name(db: Session, patient_id: int):
-        query = db.execute(select(models.Patient.id,
-                                  models.Patient.person_id,
-                                  models.Person.email,
-                                  models.Patient.ohip\
-                                  ).join(models.Person
-                                  ).where(models.Patient.id == patient_id)).first()
-        row = query
+    async def read_patient_with_id_display_name(self, patient_id: int):
+        query = await self.session.execute(select(models.Patient.id,
+                                models.Patient.person_id,
+                                models.Person.email,
+                                models.Patient.ohip\
+                                ).join(models.Person
+                                ).where(models.Patient.id == patient_id))
+        row = query.first()
         result = schemas.PatientDisplay(id=row[0],
                                         person_id=row[1],
                                         person_display_name=row[2],

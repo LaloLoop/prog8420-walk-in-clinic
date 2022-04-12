@@ -178,9 +178,9 @@ async def read_patient(patient_id: int, crud_helper: crud.PatientCRUD = Depends(
     return db_patient
 
 
-@app.get("/patient_with_id_display_name/{patient_id}", response_model=schemas.PatientDisplay)
-def read_patient_joined(patient_id: int, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
-    db_patient = crud_helper.read_patient_with_id_display_name(patient_id=patient_id)
+@app.get("/patient_with_id_display_name/{patient_id}", response_model=schemas.PatientDisplay, tags=["patient"])
+async def read_patient_joined(patient_id: int, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
+    db_patient = await crud_helper.read_patient_with_id_display_name(patient_id=patient_id)
     if db_patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
     return db_patient
