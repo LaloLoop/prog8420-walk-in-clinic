@@ -97,23 +97,24 @@ class EmployeeCRUD:
                                                 job_display_name=row[4],))
         return result
 
-    def read_employee_with_id_display_name(db: Session, employee_id: int):
-        query = db.execute(select(models.Employee.id,
+    async def read_employee_with_id_display_name(self, employee_id: int):
+        query = await self.session.execute(select(models.Employee.id,
                                 models.Employee.person_id,
                                 models.Person.email,
                                 models.Job.id,
-                                models.Job.title,
-                                models.Employee.password
+                                models.Job.title
                                 ).join(models.Person).join(models.Job
-                                ).where(models.Employee.id == employee_id)).first()
-        row = query
-        result = schemas.EmployeeDisplay(id=row[0],
-                                        person_id=row[1],
-                                        person_display_name=row[2],
-                                        job_id=row[3],
-                                        job_display_name=row[4],
-                                        password=row[5])
-        return result
+                                ).where(models.Employee.id == employee_id))
+        row = next(query)
+
+        if row is not None:
+            return schemas.EmployeeDisplay(id=row[0],
+                                            person_id=row[1],
+                                            person_display_name=row[2],
+                                            email=row[2],
+                                            job_id=row[3],
+                                            job_display_name=row[4])
+        return None
 
 class JobCRUD:
     def __init__(self, session: AsyncSession):

@@ -132,7 +132,7 @@ async def delete_job(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_c
     await crud_helper.delete_job(job_id=job_id)
     return db_person
 
-@app.get("/employees_with_id_display_name/", response_model=List[schemas.EmployeeDisplay])
+@app.get("/employees_with_id_display_name/", response_model=List[schemas.EmployeeDisplay], tags=["employee"])
 async def read_employees_joined(crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
     db_employees = await crud_helper.read_employees_with_id_display_name()
     if db_employees is None:
@@ -152,8 +152,8 @@ async def read_employee(employee_id: UUID4, crud_helper: crud.EmployeeCRUD = Dep
         raise HTTPException(status_code=404, detail="Employee not found")
     return db_employee
 
-@app.get("/employee_with_id_display_name/{employee_id}", response_model=schemas.EmployeeDisplay)
-async def read_employee_joined(employee_id: int, crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
+@app.get("/employee_with_id_display_name/{employee_id}", response_model=schemas.EmployeeDisplay, tags=["employee"])
+async def read_employee_joined(employee_id: UUID4, crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
     db_employee = await crud_helper.read_employee_with_id_display_name(employee_id=employee_id)
     if db_employee is None:
         raise HTTPException(status_code=404, detail="Employee not found")
