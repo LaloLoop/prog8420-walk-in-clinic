@@ -1,5 +1,5 @@
 from fastapi_users_db_sqlalchemy import GUID, SQLAlchemyBaseUserTable
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func
+from sqlalchemy import Column, Date, Integer, String, ForeignKey, DateTime, func
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 from database import Base
@@ -11,7 +11,7 @@ class Person(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     first_name = Column(String)
     last_name = Column(String)
-    birthdate = Column(String)
+    birthdate = Column(Date)
     street = Column(String)
     city = Column(String)
     province = Column(String)
