@@ -20,20 +20,31 @@ class PersonCRUD:
         self.session = session
 
     async def read_person_by_email(self, email: str, session: AsyncSession = Depends(get_async_session)):
-        result = await self.session.execute(select(models.Person).where(models.Person.email == email))
-        return result.scalars().first()
+        return (await self.session.execute(select(models.Person).where(models.Person.email == email))).scalars().first()
 
     async def read_persons(self, skip: int = 0, limit: int = 100):
-        result = await self.session.execute(select(models.Person).offset(skip).limit(limit))
-
-        persons = result.scalars().all()
-
-        return persons
+        return (await self.session.execute(select(models.Person).offset(skip).limit(limit))).scalars().all()
 
     async def read_person(self, person_id: int):
-        result = await self.session.execute(select(models.Person).where(models.Person.id == person_id))
+        return (await self.session.execute(select(models.Person).where(models.Person.id == person_id))).scalars().first()
 
-        return result.scalars().first()
+    async def read_person_is_assigned(self, person_id: int):
+        result = await self.session.execute(select(models.Patient.person_id).where(models.Patient.person_id == person_id))
+        if result.scalars().first() is not None:
+            return True
+        result = await self.session.execute(select(models.Employee.person_id).where(models.Employee.person_id == person_id))
+        if result.scalars().first() is not None:
+            return True
+        return False
+    
+    async def read_persons_unassigned(self):
+        all_available_person_ids = (await self.session.execute(select(models.Person.id))).scalars().all()
+        person_ids_who_are_patients = (await self.session.execute(select(models.Employee.person_id).join(models.Person))).scalars().all()
+        person_ids_who_are_employees = (await self.session.execute(select(models.Patient.person_id).join(models.Person))).scalars().all()
+        
+        unused_person_ids = sorted(set(all_available_person_ids) - set(person_ids_who_are_patients + person_ids_who_are_employees))
+        
+        return (await self.session.execute(select(models.Person).where(models.Person.id.in_(unused_person_ids)))).scalars().all()
 
     async def create_person(self, person: schemas.PersonCreate):
         db_person = models.Person(**person.dict())
@@ -57,27 +68,26 @@ class PersonCRUD:
         await self.session.execute(delete(models.Person).where(models.Person.id == person_id))
         await self.session.commit()
 
-
 class EmployeeCRUD:
     def __init__(self, session: AsyncSession):
         self.session = session
 
     async def read_employees(self, skip: int = 0, limit: int = 100):
-        result = await self.session.execute(select(models.Employee).offset(skip).limit(limit))
-
-        return result.scalars().all()
+        return (await self.session.execute(select(models.Employee).offset(skip).limit(limit))).scalars().all()
 
     async def read_employee(self, employee_id: int):
-        result = await self.session.execute(select(models.Employee).where(models.Employee.id == employee_id))
-        return result.scalars().first()
+        return (await self.session.execute(select(models.Employee).where(models.Employee.id == employee_id))).scalars().first()
+    
+    async def read_employee_is_assigned(self, employee_id: int):
+        return (await self.session.execute(select(models.Appointment
+                     ).where(models.Appointment.staff_id == employee_id or models.Appointment.doctor_id == employee_id)
+                                          )).scalars().first() is not None
 
     async def read_employee_by_person_id(self, person_id: int):
-        result = await self.session.execute(select(models.Employee).where(models.Employee.person_id == person_id))
-        return result.scalars().first()
+        return (await self.session.execute(select(models.Employee).where(models.Employee.person_id == person_id))).scalars().first()
 
     async def read_employees_by_job_title(self, job_title: str):
-        result = await self.session.execute(select(models.Employee).join(models.Job).where(models.Job.title == job_title))
-        return result.scalars().all()
+        return (await self.session.execute(select(models.Employee).join(models.Job).where(models.Job.title == job_title))).scalars().all()
 
     async def read_employees_with_id_display_name(self):
         query = await self.session.execute(select(models.Employee.id,
@@ -122,14 +132,14 @@ class JobCRUD:
         self.session = session
 
     async def read_jobs(self, skip: int = 0, limit: int = 100):
-        result = await self.session.execute(select(models.Job).offset(skip).limit(limit))
-
-        return result.scalars().all()
+        return (await self.session.execute(select(models.Job).offset(skip).limit(limit))).scalars().all()
 
     async def read_job(self, job_id: int):
-        result = await self.session.execute(select(models.Job).where(models.Job.id == job_id))
-
-        return result.scalars().first()
+        return (await self.session.execute(select(models.Job).where(models.Job.id == job_id))).scalars().first()
+    
+    async def read_job_is_assigned(self, job_id: int):
+        return (await self.session.execute(select(models.Employee.id).join(models.Job
+                                  ).where(models.Job.id == job_id))).scalars().first() is not None
 
     async def create_job(self, job: schemas.JobCreate):
         db_job = models.Job(**job.dict())
@@ -159,19 +169,17 @@ class PatientCRUD:
         self.session = session
 
     async def read_patients(self, skip: int = 0, limit: int = 100):
-        result = await self.session.execute(select(models.Patient).offset(skip).limit(limit))
-
-        return result.scalars().all()
+        return (await self.session.execute(select(models.Patient).offset(skip).limit(limit))).scalars().all()
 
     async def read_patient(self, patient_id: int):
-        result = await self.session.execute(select(models.Patient).where(models.Patient.id == patient_id))
-
-        return result.scalars().first()
+        return (await self.session.execute(select(models.Patient).where(models.Patient.id == patient_id))).scalars().first()
 
     async def read_patient_by_person_id(self, person_id: int):
-        result = await self.session.execute(select(models.Patient).where(models.Patient.person_id == person_id))
+        return (await self.session.execute(select(models.Patient).where(models.Patient.person_id == person_id))).scalars().first()
 
-        return result.scalars().first()
+    async def read_patient_is_assigned(self, patient_id: int):
+        return (await self.session.execute(select(models.Appointment
+                     ).where(models.Appointment.patient_id == patient_id))).scalars().first() is not None
 
     async def create_patient(self, patient: schemas.PatientCreate):
         db_patient = models.Patient(**patient.dict())
@@ -202,12 +210,13 @@ class PatientCRUD:
                                                   models.Patient.ohip
                                                   ).join(models.Person
                                                          ).where(models.Patient.id == patient_id))
-        row = query.first()
-        result = schemas.PatientDisplay(id=row[0],
-                                        person_id=row[1],
-                                        person_display_name=row[2],
-                                        ohip=row[3])
-        return result
+        row = next(query)
+        if row is not None:
+            return schemas.PatientDisplay(id=row[0],
+                                          person_id=row[1],
+                                          person_display_name=row[2],
+                                          ohip=row[3])
+        return None
 
     async def update_patient(self, patient_id: int, patient: schemas.PatientUpdate):
         p_values = patient.dict()
@@ -229,19 +238,17 @@ class UnitCRUD:
         self.session = session
 
     async def read_units(self, skip: int = 0, limit: int = 100):
-        result = await self.session.execute(select(models.Unit).offset(skip).limit(limit))
-
-        return result.scalars().all()
+        return (await self.session.execute(select(models.Unit).offset(skip).limit(limit))).scalars().all()
 
     async def read_unit(self, unit_id: int):
-        result = await self.session.execute(select(models.Unit).where(models.Unit.id == unit_id))
-
-        return result.scalars().first()
+        return (await self.session.execute(select(models.Unit).where(models.Unit.id == unit_id))).scalars().first()
 
     async def read_unit_by_name(self, name: str):
-        result = await self.session.execute(select(models.Unit).where(models.Unit.name == name))
-
-        return result.scalars().first()
+        return (await self.session.execute(select(models.Unit).where(models.Unit.name == name))).scalars().first()
+    
+    async def read_unit_is_assigned(self, unit_id: int):
+        return (await self.session.execute(select(models.Prescription.id).join(models.Unit
+                                  ).where(models.Unit.id == unit_id))).scalars().first() is not None
 
     async def create_unit(self, unit: schemas.UnitCreate):
         db_unit = models.Unit(**unit.dict())
@@ -250,12 +257,6 @@ class UnitCRUD:
         await self.session.commit()
 
         return db_unit
-
-    def create_unit_by_name(db: Session, unit_name: str):
-        db_unit = models.Unit(name=unit_name)
-        db.add(db_unit)
-        db.commit()
-        db.refresh(db_unit)
 
     async def update_unit(self, unit_id: int, unit: schemas.UnitUpdate):
         p_values = unit.dict()
@@ -277,27 +278,17 @@ class PrescriptionCRUD:
         self.session = session
 
     async def read_prescriptions(self, skip: int = 0, limit: int = 100):
-        result = await self.session.execute(select(models.Prescription).offset(skip).limit(limit))
-
-        return result.scalars().all()
+        return (await self.session.execute(select(models.Prescription).offset(skip).limit(limit))).scalars().all()
 
     async def read_prescription(self, prescription_id: int):
-        result = await self.session.execute(select(models.Prescription).where(models.Prescription.id == prescription_id))
-
-        return result.scalars().first()
+        return (await self.session.execute(select(models.Prescription).where(models.Prescription.id == prescription_id))).scalars().first()
 
     async def read_prescription_by_name(self, name: int):
-        result = await self.session.execute(select(models.Prescription).where(models.Prescription.medication == name))
-
-        return result.scalars().first()
-
-    async def create_prescription(self, prescription: schemas.PrescriptionCreate):
-        db_prescription = models.Prescription(**prescription.dict())
-
-        self.session.add(db_prescription)
-        await self.session.commit()
-
-        return db_prescription
+        return (await self.session.execute(select(models.Prescription).where(models.Prescription.medication == name))).scalars().first()
+    
+    async def read_prescription_is_assigned(self, prescription_id: int):
+        return (await self.session.execute(select(models.Appointment.id).join(models.Prescription
+                                  ).where(models.Prescription.id == prescription_id))).scalars().first() is not None
 
     async def read_prescriptions_with_id_display_name(self):
         query = await self.session.execute(select(models.Prescription.id,
@@ -326,13 +317,22 @@ class PrescriptionCRUD:
                                                          ).where(models.Prescription.id == prescription_id
                                                                  ))
 
-        row = query.first()
-        result = schemas.PrescriptionDisplay(id=row[0],
-                                             unit_id=row[1],
-                                             unit_display_name=row[2],
-                                             medication=row[3],
-                                             quantity=row[4])
-        return result
+        row = next(query)
+        if row is not None:
+            return schemas.PrescriptionDisplay(id=row[0],
+                                               unit_id=row[1],
+                                               unit_display_name=row[2],
+                                               medication=row[3],
+                                               quantity=row[4])
+        return None
+
+    async def create_prescription(self, prescription: schemas.PrescriptionCreate):
+        db_prescription = models.Prescription(**prescription.dict())
+
+        self.session.add(db_prescription)
+        await self.session.commit()
+
+        return db_prescription
 
     async def update_prescription(self, prescription_id: int, prescription: schemas.PrescriptionUpdate):
         p_values = prescription.dict()
@@ -354,19 +354,13 @@ class AppointmentCRUD:
         self.session = session
 
     async def read_appointments(self, skip: int = 0, limit: int = 100):
-        result = await self.session.execute(select(models.Appointment).offset(skip).limit(limit))
-
-        return result.scalars().all()
+        return (await self.session.execute(select(models.Appointment).offset(skip).limit(limit))).scalars().all()
 
     async def read_appointment(self, appointment_id: int):
-        result = await self.session.execute(select(models.Appointment).where(models.Appointment.id == appointment_id))
-
-        return result.scalars().first()
+        return (await self.session.execute(select(models.Appointment).where(models.Appointment.id == appointment_id))).scalars().first()
 
     async def read_appointment_by_patient_id(self, person_id: int):
-        result = await self.session.execute(select(models.Appointment).where(models.Appointment.prescription_id == person_id))
-
-        return result.scalars().first()
+        return (await self.session.execute(select(models.Appointment).where(models.Appointment.prescription_id == person_id))).scalars().first()
 
     async def create_appointment(self, appointment: schemas.AppointmentCreate):
         db_appointment = models.Appointment(**appointment.dict())
@@ -375,16 +369,7 @@ class AppointmentCRUD:
         await self.session.commit()
 
         return db_appointment
-
-    def read_appointment_by_staff_id(db: Session, staff_id: int):
-        return db.execute(select(models.Appointment).where(models.Appointment.staff_id == staff_id)).all()
-
-    def read_appointments_by_doctor_id(db: Session, doctor_id: int):
-        return db.execute(select(models.Appointment).where(models.Appointment.doctor_id == doctor_id)).all()
-
-    def read_appointments_by_prescription_id(db: Session, prescription_id: int):
-        return db.execute(select(models.Appointment).where(models.Appointment.prescription_id == prescription_id)).all()
-
+    
     async def read_appointments_with_id_display_name(self):
         patients = select(models.Patient.id,
                           models.Person.email
@@ -404,25 +389,25 @@ class AppointmentCRUD:
                                models.Unit.name,
                                ).join(models.Unit).cte(name='prescriptions')
 
-        query = await self.session.execute(select(
-            models.Appointment.id,
-            models.Appointment.patient_id,
-            patients.c.email,
-            models.Appointment.staff_id,
-            staffs.c.email,
-            models.Appointment.doctor_id,
-            doctors.c.email,
-            models.Appointment.prescription_id,
-            prescriptions.c.medication,
-            prescriptions.c.quantity,
-            prescriptions.c.name,  # unit name
-            models.Appointment.date_and_time,
-            models.Appointment.comments,
-        ).join_from(models.Appointment, patients, models.Appointment.patient_id == patients.c.id
-                    ).join_from(models.Appointment, staffs, models.Appointment.staff_id == staffs.c.id
-                                ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
-                                            ).join_from(models.Appointment, prescriptions, models.Appointment.prescription_id == prescriptions.c.id
-                                                        ))
+        query = (await self.session.execute(select(
+                                                  models.Appointment.id,
+                                                  models.Appointment.patient_id,
+                                                  patients.c.email,
+                                                  models.Appointment.staff_id,
+                                                  staffs.c.email,
+                                                  models.Appointment.doctor_id,
+                                                  doctors.c.email,
+                                                  models.Appointment.prescription_id,
+                                                  prescriptions.c.medication,
+                                                  prescriptions.c.quantity,
+                                                  prescriptions.c.name,  # unit name
+                                                  models.Appointment.date_and_time,
+                                                  models.Appointment.comments,
+                                                  ).join_from(models.Appointment, patients, models.Appointment.patient_id == patients.c.id
+                                                            ).join_from(models.Appointment, staffs, models.Appointment.staff_id == staffs.c.id
+                                                                        ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
+                                                                                    ).join_from(models.Appointment, prescriptions, models.Appointment.prescription_id == prescriptions.c.id
+                                                                                                )))
 
         result = []
         for row in query:
@@ -460,7 +445,7 @@ class AppointmentCRUD:
                                models.Unit.name,
                                ).join(models.Unit).cte(name='prescriptions')
 
-        query = await self.session.execute(select(models.Appointment.id,
+        query = (await self.session.execute(select(models.Appointment.id,
                                                   models.Appointment.patient_id,
                                                   patients.c.email,
                                                   models.Appointment.staff_id,
@@ -478,23 +463,25 @@ class AppointmentCRUD:
                                                                           ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
                                                                                       ).join_from(models.Appointment, prescriptions, models.Appointment.prescription_id == prescriptions.c.id
                                                                                                   ).where(models.Appointment.id == appointment_id
-                                                                                                          ))
+                                                                                                          )))
 
-        row = query.first()
-        result = schemas.AppointmentDisplay(id=row[0],
-                                            patient_id=row[1],
-                                            patient_display_name=row[2],
-                                            staff_id=row[3],
-                                            staff_display_name=row[4],
-                                            doctor_id=row[5],
-                                            doctor_display_name=row[6],
-                                            prescription_id=row[7],
-                                            prescription_display_name=cs.get_prescription_display_name(row[8],
-                                                                                                       row[9],
-                                                                                                       row[10]),
-                                            date_and_time=row[11],
-                                            comments=row[12])
-        return result
+        row = next(query)
+        
+        if row is not None:
+            return schemas.AppointmentDisplay(id=row[0],
+                                              patient_id=row[1],
+                                              patient_display_name=row[2],
+                                              staff_id=row[3],
+                                              staff_display_name=row[4],
+                                              doctor_id=row[5],
+                                              doctor_display_name=row[6],
+                                              prescription_id=row[7],
+                                              prescription_display_name=cs.get_prescription_display_name(row[8],
+                                                                                                         row[9],
+                                                                                                         row[10]),
+                                              date_and_time=row[11],
+                                              comments=row[12])
+        return None
 
     async def read_appointments_by_patient_id_with_id_display_name(self, patient_id: int):
         patients = select(models.Patient.id,
@@ -515,7 +502,7 @@ class AppointmentCRUD:
                                models.Unit.name,
                                ).join(models.Unit).cte(name='prescriptions')
 
-        query = await self.session.execute(select(models.Appointment.id,
+        query = (await self.session.execute(select(models.Appointment.id,
                                   models.Appointment.patient_id,
                                   patients.c.email,
                                   models.Appointment.staff_id,
@@ -533,7 +520,7 @@ class AppointmentCRUD:
                                                           ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
                                                                       ).join_from(models.Appointment, prescriptions, models.Appointment.prescription_id == prescriptions.c.id
                                                                                   ).where(models.Appointment.patient_id == patient_id
-                                                                                          ))
+                                                                                          )))
 
         result = []
         for row in query:
@@ -552,7 +539,7 @@ class AppointmentCRUD:
                                                      comments=row[12]))
         return result
 
-    async def read_appointments_by_staff_id_with_id_display_name(self, staff_id: int):
+    async def read_appointments_by_staff_id_with_id_display_name(self, staff_id: UUID4):
         patients = select(models.Patient.id,
                           models.Person.email
                           ).join(models.Person).cte(name='patients')
@@ -571,7 +558,7 @@ class AppointmentCRUD:
                                models.Unit.name,
                                ).join(models.Unit).cte(name='prescriptions')
 
-        query = await self.session.execute(select(models.Appointment.id,
+        query = (await self.session.execute(select(models.Appointment.id,
                                   models.Appointment.patient_id,
                                   patients.c.email,
                                   models.Appointment.staff_id,
@@ -589,7 +576,7 @@ class AppointmentCRUD:
                                                           ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
                                                                       ).join_from(models.Appointment, prescriptions, models.Appointment.prescription_id == prescriptions.c.id
                                                                                   ).where(models.Appointment.staff_id == staff_id
-                                                                                          ))
+                                                                                          )))
 
         result = []
         for row in query:
@@ -627,7 +614,7 @@ class AppointmentCRUD:
                                models.Unit.name,
                                ).join(models.Unit).cte(name='prescriptions')
 
-        query = await self.session.execute(select(models.Appointment.id,
+        query = (await self.session.execute(select(models.Appointment.id,
                                   models.Appointment.patient_id,
                                   patients.c.email,
                                   models.Appointment.staff_id,
@@ -645,7 +632,7 @@ class AppointmentCRUD:
                                                           ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
                                                                       ).join_from(models.Appointment, prescriptions, models.Appointment.prescription_id == prescriptions.c.id
                                                                                   ).where(models.Appointment.doctor_id == doctor_id
-                                                                                          ))
+                                                                                          )))
 
         result = []
         for row in query:
@@ -665,22 +652,20 @@ class AppointmentCRUD:
         return result
     
     async def read_available_appointment_datetimes_by_doctor_id(self, doctor_id: UUID4):
-        doctors = select(models.Employee.id,
-                         models.Person.email
-                         ).join(models.Person
-                                ).join(models.Job
-                                       ).where(models.Job.title == cs.DOCTOR_TITLE).cte(name='doctors')
+        query = (await self.session.execute(select(models.Appointment.date_and_time).where(models.Appointment.doctor_id == doctor_id)))
 
-        query = await self.session.execute(select(models.Appointment.date_and_time
-                          ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
-                          ).where(models.Appointment.doctor_id == doctor_id))
-
-        doctor_appointment_datetimes = set([tuple_[0] for tuple_ in query])
-        
+        doctor_appointment_datetimes = set([t[0] for t in query])
         all_possible_appointment_datetimes = set(cs.get_list_of_possible_available_appointment_datetimes_available_per_one_doctor_per_day())
-        
-        return sorted(list(all_possible_appointment_datetimes - doctor_appointment_datetimes))
-
+        available_appointment_datetimes = sorted(list(all_possible_appointment_datetimes.difference(doctor_appointment_datetimes)))
+       
+        import pprint as pp
+        pp.pprint(sorted(list(doctor_appointment_datetimes)))
+        pp.pprint(sorted(list(all_possible_appointment_datetimes)))
+        pp.pprint(sorted(list(available_appointment_datetimes)))
+        import sys
+         
+        return available_appointment_datetimes
+    
     async def read_appointments_by_prescription_id_with_id_display_name(self, prescription_id: int):
         patients = select(models.Patient.id,
                           models.Person.email
@@ -700,7 +685,7 @@ class AppointmentCRUD:
                                models.Unit.name,
                                ).join(models.Unit).cte(name='prescriptions')
 
-        query = await self.session.execute(select(models.Appointment.id,
+        query = (await self.session.execute(select(models.Appointment.id,
                                   models.Appointment.patient_id,
                                   patients.c.email,
                                   models.Appointment.staff_id,
@@ -718,7 +703,7 @@ class AppointmentCRUD:
                                                           ).join_from(models.Appointment, doctors, models.Appointment.doctor_id == doctors.c.id
                                                                       ).join_from(models.Appointment, prescriptions, models.Appointment.prescription_id == prescriptions.c.id
                                                                                   ).where(models.Appointment.prescription_id == prescription_id
-                                                                                          ))
+                                                                                          )))
 
         result = []
         for row in query:
