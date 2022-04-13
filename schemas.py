@@ -273,12 +273,23 @@ class AppointmentBase(BaseModel):
         if cs.BYPASS_DATE_AND_TIME_VALIDATION:
             return v
         else:
-          starting_lunch_datetime = cs.get_todays_starting_lunch_time_datetime().replace(tzinfo=v.tzinfo)
-          ending_lunch_datetime = cs.get_todays_ending_lunch_time_datetime().replace(tzinfo=v.tzinfo)
+            starting_lunch_datetime = cs.get_todays_starting_lunch_time_datetime().replace(tzinfo=v.tzinfo)
+            ending_lunch_datetime = cs.get_todays_ending_lunch_time_datetime().replace(tzinfo=v.tzinfo)
 
-          if v >= starting_lunch_datetime and v < ending_lunch_datetime:
-              raise ValueError(f'{v} must not be during lunch hour, between {starting_lunch_datetime.hour} and {ending_lunch_datetime.hour} today')
-          return v
+            if v >= starting_lunch_datetime and v < ending_lunch_datetime:
+                raise ValueError(f'{v} must not be during lunch hour, between {starting_lunch_datetime.hour} and {ending_lunch_datetime.hour} today')
+            return v
+   
+    @validator('date_and_time')
+    def date_and_time_must_not_be_outside_of_regular_hours(cls, v: datetime.datetime):
+        if cs.BYPASS_DATE_AND_TIME_VALIDATION:
+            return v
+        else:
+            opening_time_datetime = cs.get_todays_opening_time_datetime().replace(tzinfo=v.tzinfo)
+            closing_time_datetime = cs.get_todays_closing_datetime().replace(tzinfo=v.tzinfo)
+            if v < opening_time_datetime or v > closing_time_datetime:
+                raise ValueError(f'{v} must be during regular hours, between {opening_time_datetime} and {closing_time_datetime} today')
+            return v
     
     @validator('comments')
     def comments_must_be_less_than_500_characters(cls, v):

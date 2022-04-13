@@ -17,6 +17,8 @@ CLOSING_HOUR_TIME_DELTA = timedelta(hours=17)
 
 APPOINTMENT_LENGTH_TIME_DELTA = timedelta(minutes=30)
 
+PAGINATION_LIMIT = 100
+
 FAKER_LOCALE = 'en_CA'
 FAKER_SEED = 34003
 
@@ -46,7 +48,7 @@ JOB_SPECIALTIES =   ADMIN_SPECIALTIES[0:NUM_ADMIN] + \
                     STAFF_SPECIALTIES[0:NUM_STAFF] + \
                     DOCTOR_SPECIALTIES[0:NUM_DOCTORS]
                     
-INIT_NUM_PATIENTS = 40
+INIT_NUM_PATIENTS = 60
 NUM_PRESCRIPTIONS = INIT_NUM_PATIENTS
 
 UNIT_NAMES = ['mg','mL','g','oz']
@@ -99,6 +101,20 @@ def get_todays_starting_lunch_time_datetime():
 
 def get_todays_ending_lunch_time_datetime():
     return get_todays_datetime_from_time_delta(END_LUNCH_TIME_DELTA)
+
+def get_number_of_possible_appointments_available_per_one_doctor_per_day():
+    return len(get_list_of_possible_available_appointment_datetimes_available_per_one_doctor_per_day())  
+    
+def get_list_of_possible_available_appointment_datetimes_available_per_one_doctor_per_day():
+    available_appointment_datetimes = []
+    
+    current_datetime = get_todays_opening_datetime()
+    while current_datetime < get_todays_closing_datetime():
+        if current_datetime < get_todays_starting_lunch_time_datetime() or current_datetime >= get_todays_ending_lunch_time_datetime():
+            available_appointment_datetimes.append(current_datetime)
+        current_datetime += APPOINTMENT_LENGTH_TIME_DELTA 
+
+    return available_appointment_datetimes
 
 def get_number_of_appointments_available_today(num_doctors):
     time_available_in_day_time_delta = CLOSING_HOUR_TIME_DELTA - OPENING_HOUR_TIME_DELTA - \
