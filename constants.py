@@ -57,6 +57,9 @@ PRESCRIPTION_QUANTITIES = [1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 100, 200, 300, 400
 
 PROVINCES = ['AB','BC','MB','NB','NL','NS','NT','NU','ON','PE','QC','SK','YT']
 
+def get_appointment_display_name(doctor_display_name, date_and_time):
+    return f'{date_and_time.strftime("%d/%m/%Y, %H:%M:%S")}, {doctor_display_name}'
+
 def get_prescription_display_name(medication_name, quantity, unit_name):
     return f'{medication_name} ({str(quantity)} {unit_name})'
 

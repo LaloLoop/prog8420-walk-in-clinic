@@ -68,6 +68,9 @@ async def on_startup():
 async def root():
     return {"message": "Go to <base_url>/docs to see the Swagger Page"}
 
+@app.get("/person-list-of-provinces/" , response_model=List[str], tags=["person"])
+def get_list_of_provinces():
+    return sorted(cs.PROVINCES)
 
 @app.get("/persons/", response_model=List[schemas.Person], tags=["person"])
 async def read_persons(skip: int = 0, limit: int = cs.PAGINATION_LIMIT, crud_helper: crud.PersonCRUD = Depends(crud.person_crud)):
@@ -113,6 +116,10 @@ async def delete_person(person_id: int, crud_helper: crud.PersonCRUD = Depends(c
     await crud_helper.delete_person(person_id=person_id)
     return db_person
 
+
+@app.get("/job-list-of-job-titles/" , response_model=List[str], tags=["job"])
+def get_list_of_job_titles():
+    return sorted(list(set(cs.JOB_TITLES)))
 
 @app.get("/jobs/", response_model=List[schemas.Job], tags=["job"])
 async def read_jobs(skip: int = 0, limit: int = cs.PAGINATION_LIMIT, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
