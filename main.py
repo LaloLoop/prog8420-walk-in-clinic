@@ -1,11 +1,9 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException, status
 
 from fastapi.middleware.cors import CORSMiddleware
-
-from sqlalchemy.orm import Session
 
 from pydantic import UUID4
 
@@ -13,7 +11,7 @@ import crud, schemas
 import constants as cs
 
 from seed_db import spawn_db_seed
-from users import auth_backend, create_db_and_tables, get_async_session, current_active_user, fastapi_users
+from users import auth_backend, create_db_and_tables, current_active_user, fastapi_users
 
 app = FastAPI()
 
