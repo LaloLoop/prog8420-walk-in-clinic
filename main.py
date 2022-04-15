@@ -97,7 +97,7 @@ async def read_person_is_assigned(person_id: int, crud_helper: crud.PersonCRUD =
 @app.post("/person/", response_model=schemas.Person, status_code=status.HTTP_201_CREATED, tags=["person"])
 async def create_person(person: schemas.PersonCreate, crud_helper: crud.PersonCRUD = Depends(crud.person_crud)):
     db_person = await crud_helper.read_person_by_email(person.email)
-    if db_person is not None:
+    if db_person:
         raise HTTPException(status_code=400, detail="Person with this email already exists")
     return await crud_helper.create_person(person=person)
 
@@ -106,6 +106,9 @@ async def update_person(person_id: int, person: schemas.PersonUpdate, crud_helpe
     db_person = await crud_helper.read_person(person_id)
     if db_person is None:
         raise HTTPException(status_code=404, detail="Person not found")
+    db_person = await crud_helper.read_person_by_email(person.email)
+    if db_person.id != person_id and db_person:
+        raise HTTPException(status_code=400, detail="Person with this email already exists")
     return await crud_helper.update_person(person_id=person_id, person=person)
 
 @app.delete("/person/{person_id}", response_model=schemas.Person, tags=["person"])
@@ -145,7 +148,7 @@ async def create_job(job: schemas.JobCreate, crud_helper: crud.JobCRUD = Depends
 
 @app.put("/job/{job_id}", response_model=schemas.Job, tags=["job"])
 async def update_job(job_id: int, job: schemas.JobUpdate, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
-    return await crud_helper.update_job(job_id=job_id, job=job)
+    return await crud_helper.update_job(job, job=job)
 
 @app.delete("/job/{job_id}", response_model=schemas.Job, tags=["job"])
 async def delete_job(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
@@ -161,7 +164,6 @@ async def read_employees_joined(crud_helper: crud.EmployeeCRUD = Depends(crud.em
     db_employees = await crud_helper.read_employees_with_id_display_name()
     if db_employees is None:
         raise HTTPException(status_code=404, detail="Employees not found")
-
     return db_employees
 
 @app.get("/employees/", response_model=List[schemas.Employee], tags=["employee"])
@@ -270,6 +272,9 @@ async def update_unit(unit_id: int, unit: schemas.UnitUpdate, crud_helper: crud.
     db_unit = await crud_helper.read_unit(unit_id)
     if db_unit is None:
         raise HTTPException(status_code=404, detail="Unit not found")
+    db_unit = await crud_helper.read_unit_by_name(unit.name)
+    if db_unit.id != unit_id and db_unit:
+        raise HTTPException(status_code=400, detail="Unit with this name already exists")
     return await crud_helper.update_unit(unit_id=unit_id, unit=unit)
 
 @app.delete("/unit/{unit_id}", response_model=schemas.Unit, tags=["unit"])
