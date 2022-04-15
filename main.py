@@ -77,7 +77,7 @@ async def read_persons(skip: int = 0, limit: int = cs.PAGINATION_LIMIT, crud_hel
         raise HTTPException(status_code=404, detail="Persons not found")
     return db_persons
 
-@app.get("/persons_unassigned/", response_model=List[schemas.Person], tags=["person"])
+@app.get("/persons-unassigned/", response_model=List[schemas.Person], tags=["person"])
 async def read_persons_unused(crud_helper: crud.PersonCRUD = Depends(crud.person_crud)):
     return await crud_helper.read_persons_unassigned()
 
@@ -88,7 +88,7 @@ async def read_person(person_id: int, crud_helper: crud.PersonCRUD = Depends(cru
         raise HTTPException(status_code=404, detail="Person not found")
     return db_person
 
-@app.get("/person_is_assigned/{person_id}", response_model=bool, tags=["person"])
+@app.get("/person-is-assigned/{person_id}", response_model=bool, tags=["person"])
 async def read_person_is_assigned(person_id: int, crud_helper: crud.PersonCRUD = Depends(crud.person_crud)):
     return await crud_helper.read_person_is_assigned(person_id=person_id)
 
@@ -129,7 +129,7 @@ async def read_job(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_cru
         raise HTTPException(status_code=404, detail="Job not found")
     return db_job
 
-@app.get("/job_is_assigned/{job_id}", response_model=bool, tags=["job"])
+@app.get("/job-is-assigned/{job_id}", response_model=bool, tags=["job"])
 async def read_job_is_assigned(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
     return await crud_helper.read_job_is_assigned(job_id=job_id)
 
@@ -150,7 +150,7 @@ async def delete_job(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_c
     return db_person
 
 
-@app.get("/employees_with_id_display_name/", response_model=List[schemas.EmployeeDisplay], tags=["employee"])
+@app.get("/employees-with-id-display-name/", response_model=List[schemas.EmployeeDisplay], tags=["employee"])
 async def read_employees_joined(crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
     db_employees = await crud_helper.read_employees_with_id_display_name()
     if db_employees is None:
@@ -170,11 +170,11 @@ async def read_employee(employee_id: UUID4, crud_helper: crud.EmployeeCRUD = Dep
         raise HTTPException(status_code=404, detail="Employee not found")
     return db_employee
 
-@app.get("/employee_is_assigned/{employee_id}", response_model=bool, tags=["employee"])
+@app.get("/employee-is-assigned/{employee_id}", response_model=bool, tags=["employee"])
 async def read_employee_is_assigned(employee_id: UUID4, crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
     return await crud_helper.read_employee_is_assigned(employee_id=employee_id)
 
-@app.get("/employee_with_id_display_name/{employee_id}", response_model=schemas.EmployeeDisplay, tags=["employee"])
+@app.get("/employee-with-id-display-name/{employee_id}", response_model=schemas.EmployeeDisplay, tags=["employee"])
 async def read_employee_joined(employee_id: UUID4, crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
     db_employee = await crud_helper.read_employee_with_id_display_name(employee_id=employee_id)
     if db_employee is None:
@@ -182,7 +182,7 @@ async def read_employee_joined(employee_id: UUID4, crud_helper: crud.EmployeeCRU
     return db_employee
 
 
-@app.get("/patients_with_id_display_name/", response_model=List[schemas.PatientDisplay], tags=["patient"])
+@app.get("/patients-with-id_display-name/", response_model=List[schemas.PatientDisplay], tags=["patient"])
 async def read_patients_joined(crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
     return await crud_helper.read_patients_with_id_display_name()
 
@@ -200,11 +200,11 @@ async def read_patient(patient_id: int, crud_helper: crud.PatientCRUD = Depends(
         raise HTTPException(status_code=404, detail="Patient not found")
     return db_patient
 
-@app.get("/patient_is_assigned/", response_model=bool, tags=["patient"])
+@app.get("/patient-is-assigned/", response_model=bool, tags=["patient"])
 async def read_patient_is_assigned(patient_id: int, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
     return await crud_helper.read_patient_is_assigned(patient_id=patient_id)
 
-@app.get("/patient_with_id_display_name/{patient_id}", response_model=schemas.PatientDisplay, tags=["patient"])
+@app.get("/patient-with-id-display-name/{patient_id}", response_model=schemas.PatientDisplay, tags=["patient"])
 async def read_patient_joined(patient_id: int, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
     db_patient = await crud_helper.read_patient_with_id_display_name(patient_id=patient_id)
     if db_patient is None:
@@ -248,7 +248,7 @@ async def read_unit(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.unit
         raise HTTPException(status_code=404, detail="Unit not found")
     return db_unit
 
-@app.get("/unit_is_assigned/", response_model=bool, tags=["unit"])
+@app.get("/unit-is-assigned/", response_model=bool, tags=["unit"])
 async def read_unit_is_assigned(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.unit_crud)):
     return await crud_helper.read_unit_is_assigned(unit_id=unit_id)
 
@@ -275,7 +275,7 @@ async def delete_unit(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.un
     return db_unit
 
 
-@app.get("/prescriptions_with_id_display_name/", response_model=List[schemas.PrescriptionDisplay], tags=["prescription"])
+@app.get("/prescriptions-with-id-display-name/", response_model=List[schemas.PrescriptionDisplay], tags=["prescription"])
 async def read_prescriptions_joined(crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
     db_prescriptions = await crud_helper.read_prescriptions_with_id_display_name()
     return db_prescriptions
@@ -294,11 +294,11 @@ async def read_prescription(prescription_id: int, crud_helper: crud.Prescription
         raise HTTPException(status_code=404, detail="Prescription not found")
     return db_prescription
 
-@app.get("/prescription_is_assigned/", response_model=bool, tags=["prescription"])
+@app.get("/prescription-is-assigned/", response_model=bool, tags=["prescription"])
 async def read_prescription_is_assigned(prescription_id: int, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
     return await crud_helper.read_prescription_is_assigned(prescription_id=prescription_id)
 
-@app.get("/prescription_with_id_display_name/{prescription_id}", response_model=schemas.PrescriptionDisplay, tags=["prescription"])
+@app.get("/prescription-with-id-display-name/{prescription_id}", response_model=schemas.PrescriptionDisplay, tags=["prescription"])
 async def read_prescription_joined(prescription_id: int, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
     db_prescription = await crud_helper.read_prescription_with_id_display_name(prescription_id=prescription_id)
     if db_prescription is None:
@@ -329,7 +329,7 @@ async def delete_prescription(prescription_id: int, crud_helper: crud.Prescripti
     return db_prescription
 
 
-@app.get("/appointments_with_id_display_name/", response_model=List[schemas.AppointmentDisplay], tags=["appointment"])
+@app.get("/appointments-with-id-display-name/", response_model=List[schemas.AppointmentDisplay], tags=["appointment"])
 async def read_appointments_joined(crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
     db_appointments = await crud_helper.read_appointments_with_id_display_name()
     return db_appointments
@@ -348,40 +348,40 @@ async def read_appointment(appointment_id: int, crud_helper: crud.AppointmentCRU
         raise HTTPException(status_code=404, detail="Appointment not found")
     return db_appointment
 
-@app.get("/appointment_available_date_and_times/{doctor_id}", response_model=List[datetime], tags=["appointment"])
+@app.get("/appointment-available-date-and-times/{doctor_id}", response_model=List[datetime], tags=["appointment"])
 async def read_appointment_available_date_and_times(doctor_id: UUID4, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
     available_datetimes_for_doctor = await crud_helper.read_available_appointment_datetimes_by_doctor_id(doctor_id=doctor_id)
     return available_datetimes_for_doctor
 
-@app.get("/appointment_with_id_display_name/{appointment_id}", response_model=schemas.AppointmentDisplay, tags=["appointment"])
+@app.get("/appointment-with-id-display-name/{appointment_id}", response_model=schemas.AppointmentDisplay, tags=["appointment"])
 async def read_appointment_joined(appointment_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
     db_appointment = await crud_helper.read_appointment_with_id_display_name(appointment_id)
     if db_appointment is None:
         raise HTTPException(status_code=404, detail="Appointment not found")
     return db_appointment
 
-@app.get("/appointments_by_doctor_id_with_id_display_name/{doctor_id}", response_model=List[schemas.AppointmentDisplay], tags=["appointment"])
+@app.get("/appointments-by-doctor-id-with-id-display-name/{doctor_id}", response_model=List[schemas.AppointmentDisplay], tags=["appointment"])
 async def read_appointment_by_doctor_id_with_id_display_name(doctor_id: UUID4, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
     db_appointments = await crud_helper.read_appointments_by_doctor_id_with_id_display_name(doctor_id=doctor_id)
     if db_appointments is None:
         raise HTTPException(status_code=404, detail="Appointments not found")
     return db_appointments
 
-@app.get("/appointments_by_patient_id_with_id_display_name/{patient_id}", response_model=List[schemas.AppointmentDisplay], tags=["appointment"])
+@app.get("/appointments-by-patient-id-with-id-display-name/{patient_id}", response_model=List[schemas.AppointmentDisplay], tags=["appointment"])
 async def read_appointment_by_patient_id_with_id_display_name(patient_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
     db_appointments = await crud_helper.read_appointments_by_patient_id_with_id_display_name(patient_id=patient_id)
     if db_appointments is None:
         raise HTTPException(status_code=404, detail="Appointments not found")
     return db_appointments
 
-@app.get("/appointments_by_staff_id_with_id_display_name/{staff_id}", response_model=List[schemas.AppointmentDisplay], tags=["appointment"])
+@app.get("/appointments-by-staff-id-with-id-display-name/{staff_id}", response_model=List[schemas.AppointmentDisplay], tags=["appointment"])
 async def read_appointment_by_staff_id_with_id_display_name(staff_id: UUID4, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
     db_appointments = await crud_helper.read_appointments_by_staff_id_with_id_display_name(staff_id=staff_id)
     if db_appointments is None:
         raise HTTPException(status_code=404, detail="Appointments not found")
     return db_appointments
 
-@app.get("/appointments_by_prescription_id_with_id_display_name/{prescription_id}", response_model=List[schemas.AppointmentDisplay], tags=["appointment"])
+@app.get("/appointments-by-prescription-id-with-id-display-name/{prescription_id}", response_model=List[schemas.AppointmentDisplay], tags=["appointment"])
 async def read_appointment_by_prescription_id_with_id_display_name(prescription_id: int, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
     db_appointments = await crud_helper.read_appointments_by_prescription_id_with_id_display_name(prescription_id=prescription_id)
     if db_appointments is None:
