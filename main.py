@@ -164,6 +164,20 @@ async def read_employees_joined(crud_helper: crud.EmployeeCRUD = Depends(crud.em
         raise HTTPException(status_code=404, detail="Employees not found")
     return db_employees
 
+@app.get("/employees-staff-with-id-display-name/", response_model=List[schemas.EmployeeDisplay], tags=["employee"])
+async def read_employees_joined(crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
+    db_staff_employees = await crud_helper.read_employees_staff_with_id_display_name()
+    if db_staff_employees is None:
+        raise HTTPException(status_code=404, detail="Staff Employees not found")
+    return db_staff_employees
+
+@app.get("/employees-doctor-with-id-display-name/", response_model=List[schemas.EmployeeDisplay], tags=["employee"])
+async def read_employees_joined(crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
+    db_doctor_employees = await crud_helper.read_employees_doctor_with_id_display_name()
+    if db_doctor_employees is None:
+        raise HTTPException(status_code=404, detail="Doctor Employees not found")
+    return db_doctor_employees
+
 @app.get("/employees/", response_model=List[schemas.Employee], tags=["employee"])
 async def read_employees(skip: int = 0, limit: int = cs.PAGINATION_LIMIT, crud_helper: crud.EmployeeCRUD = Depends(crud.employee_crud)):
     db_employees = await crud_helper.read_employees(skip=skip, limit=limit)
