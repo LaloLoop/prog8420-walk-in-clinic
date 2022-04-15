@@ -19,13 +19,12 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3030", # allow ANVIL client to access the API
-    "https://wic-frontend.anvil.app",
-    "https://anvil.works"
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex='https://.*\.anvil\.app',
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
