@@ -363,6 +363,7 @@ class Appointment(AppointmentBase):
 
 class AppointmentDisplay(AppointmentBase):
     id: int
+    appointment_display_name: str 
     patient_id: int
     patient_display_name: str
     staff_id: UUID4
