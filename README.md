@@ -6,7 +6,8 @@ Implementation of a backend for a Walk In Clinic, part of the PROG8420 Programmi
 
 As of this writing, this project is live and deployed in the following URL.
 
-https://wic-frontend.anvil.app/
+* Frontend: https://wic-frontend.anvil.app/
+* Backend: https://wic-backend.herokuapp.com/docs
 
 ## Run the project
 
@@ -54,6 +55,13 @@ anvil-app-server
 ```
 
 The above will launch the frontend and make it accessible in [http://localhost:3030](http://localhost:3030).
+
+## Accessing the project
+
+The default users are populated once the server is started, and you can see temporary credentials in the logs of the application. The default login for the admin is:
+
+* Usernme: `gbuchanan@example.net`
+* Password: `admin`
 
 ## Troubleshooting
 
