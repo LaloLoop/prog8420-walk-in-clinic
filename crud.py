@@ -196,12 +196,12 @@ class JobCRUD:
         return db_job
 
     async def update_job(self, job_id: int, job: schemas.JobUpdate):
-        p_values = job.dict()
-        for k, v in {**p_values}.items():
+        j_values = job.dict()
+        for k, v in {**j_values}.items():
             if v is None:
-                del p_values[k]
+                del j_values[k]
 
-        await self.session.execute(update(models.Job).where(models.Job.id == job_id).values(**p_values))
+        await self.session.execute(update(models.Job).where(models.Job.id == job_id).values(**j_values))
         await self.session.commit()
 
         return await self.read_job(job_id)
@@ -821,6 +821,20 @@ class AppointmentCRUD:
                                                      date_and_time=row[11],
                                                      comments=row[12]))
         return result
+
+    async def update_appointment(self, appointment_id: int, appointment: schemas.AppointmentUpdate):
+        a_values = appointment.dict()
+        for k, v in {**a_values}.items():
+            if v is None:
+                del a_values[k]
+        await self.session.execute(update(models.Appointment).where(models.Appointment.id == appointment_id).values(**a_values))
+        await self.session.commit()
+
+        return await self.read_appointment(appointment_id)
+
+    async def delete_appointment(self, appointment_id: int):
+        await self.session.execute(delete(models.Appointment).where(models.Appointment.id == appointment_id))
+        await self.session.commit()
 
 
 async def person_crud(session=Depends(get_async_session)):
