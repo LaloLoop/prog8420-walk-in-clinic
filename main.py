@@ -24,8 +24,8 @@ app.add_middleware(
     allow_origins=origins,
     allow_origin_regex='https://.*\.anvil\.app',
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["POST", "GET"],
+    allow_headers=["Origin"],
 )
 
 ## AUTH ##
