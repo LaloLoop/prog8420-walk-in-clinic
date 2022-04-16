@@ -146,11 +146,11 @@ async def create_job(job: schemas.JobCreate, crud_helper: crud.JobCRUD = Depends
 
 @app.put("/job/{job_id}", response_model=schemas.Job, tags=["job"])
 async def update_job(job_id: int, job: schemas.JobUpdate, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
-    return await crud_helper.update_job(job, job=job)
+    return await crud_helper.update_job(job_id=job_id, job=job)
 
 @app.delete("/job/{job_id}", response_model=schemas.Job, tags=["job"])
 async def delete_job(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
-    db_person = await crud_helper.read_job(job_id)
+    db_person = await crud_helper.read_job(job_id=job_id)
     if db_person is None:
         raise HTTPException(status_code=404, detail="Job not found")
     await crud_helper.delete_job(job_id=job_id)
