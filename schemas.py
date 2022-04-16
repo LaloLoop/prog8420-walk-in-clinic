@@ -428,6 +428,7 @@ class Prescription(PrescriptionBase):
         
 class PrescriptionDisplay(PrescriptionBase):
     id: int
+    prescription_display_name: str
     unit_id: int
     unit_display_name: str
     
