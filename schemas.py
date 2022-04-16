@@ -250,7 +250,6 @@ class PatientUpdate(PatientBase):
 class Patient(PatientBase):
     id: int
     person_id: int
-    person_display_name: str
     
     class Config:
         orm_mode = True
