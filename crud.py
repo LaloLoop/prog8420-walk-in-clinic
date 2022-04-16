@@ -351,6 +351,7 @@ class PrescriptionCRUD:
         result = []
         for row in query:
             result.append(schemas.PrescriptionDisplay(id=row[0],
+                                                      prescription_display_name=cs.get_prescription_display_name(row[3], row[4], row[2]),
                                                       unit_id=row[1],
                                                       unit_display_name=row[2],
                                                       medication=row[3],
