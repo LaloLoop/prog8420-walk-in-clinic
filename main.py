@@ -202,8 +202,12 @@ async def read_employee_joined(employee_id: UUID4, crud_helper: crud.EmployeeCRU
     return db_employee
 
 
-@app.get("/patients-with-id_display-name/", response_model=List[schemas.PatientDisplay], tags=["patient"])
-async def read_patients_joined(crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
+@app.get("/patients-unbooked-with-id-display-name/", response_model=List[schemas.PatientDisplay], tags=["patient"])
+async def read_patients_unbooked_with_id_display_name(crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
+    return await crud_helper.read_patients_unbooked_with_id_display_name()
+
+@app.get("/patients-with-id-display-name/", response_model=List[schemas.PatientDisplay], tags=["patient"])
+async def read_patients_with_id_display_name(crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
     return await crud_helper.read_patients_with_id_display_name()
 
 @app.get("/patients/", response_model=List[schemas.Patient], tags=["patient"])

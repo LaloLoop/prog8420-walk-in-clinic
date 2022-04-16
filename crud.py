@@ -236,6 +236,30 @@ class PatientCRUD:
 
         return db_patient
 
+    async def read_patients_unbooked_with_id_display_name(self):
+        all_patient_ids = (await self.session.execute(select(models.Patient.id).join(models.Person)
+                                                      )
+                          ).scalars().all()
+        
+        patient_ids_with_appointments = (await self.session.execute(select(models.Appointment.patient_id))).scalars().all()
+        
+        unbooked_patient_ids = list(set(all_patient_ids).difference(set(patient_ids_with_appointments)))
+        
+        query = await self.session.execute(select(models.Patient.id,
+                                                  models.Patient.person_id,
+                                                  models.Person.email,
+                                                  models.Patient.ohip
+                                                  ).join(models.Person
+                                                  ).where(models.Patient.id.in_(unbooked_patient_ids))
+                                           )
+        result = []
+        for row in query:
+            result.append(schemas.PatientDisplay(id=row[0],
+                                                 person_id=row[1],
+                                                 person_display_name=row[2],
+                                                 ohip=row[3]))
+        return result
+    
     async def read_patients_with_id_display_name(self):
         query = await self.session.execute(select(models.Patient.id,
                                                   models.Patient.person_id,
