@@ -110,7 +110,7 @@ class EmployeeCRUD:
                                                   person_display_name=row[2],
                                                   email=row[2],
                                                   job_id=row[3],
-                                                  job_display_name=row[4]
+                                                  job_display_name=row[4],
                                                   is_active=row[5],
                                                   is_verified=row[6],
                                                   is_superuser=row[7]
