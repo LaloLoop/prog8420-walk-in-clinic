@@ -1,0 +1,3 @@
+[submodule "prog8420-wic-frontend"]
+	path = prog8420-wic-frontend
+	url = git@github.com:LaloLoop/prog8420-wic-frontend.git
