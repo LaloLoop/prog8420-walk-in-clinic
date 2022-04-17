@@ -216,7 +216,6 @@ class Employee(models.BaseUser):
         orm_mode = True
         
 class EmployeeDisplay(models.BaseUser):
-    id: UUID4
     person_id: int
     person_display_name: str
     job_id: int

@@ -96,7 +96,10 @@ class EmployeeCRUD:
                                                   models.Employee.person_id,
                                                   models.Person.email,
                                                   models.Job.id,
-                                                  models.Job.title
+                                                  models.Job.title,
+                                                  models.Employee.is_active,
+                                                  models.Employee.is_verified,
+                                                  models.Employee.is_superuser
                                                   ).join(models.Person
                                                   ).join(models.Job)
                                            )
@@ -107,7 +110,11 @@ class EmployeeCRUD:
                                                   person_display_name=row[2],
                                                   email=row[2],
                                                   job_id=row[3],
-                                                  job_display_name=row[4],))
+                                                  job_display_name=row[4]
+                                                  is_active=row[5],
+                                                  is_verified=row[6],
+                                                  is_superuser=row[7]
+                                                  ))
         return result
 
     async def read_employee_with_id_display_name(self, employee_id: int):
@@ -115,7 +122,10 @@ class EmployeeCRUD:
                                                   models.Employee.person_id,
                                                   models.Person.email,
                                                   models.Job.id,
-                                                  models.Job.title
+                                                  models.Job.title,
+                                                  models.Employee.is_active,
+                                                  models.Employee.is_verified,
+                                                  models.Employee.is_superuser
                                                   ).join(models.Person
                                                   ).join(models.Job
                                                   ).where(models.Employee.id == employee_id)
@@ -128,7 +138,11 @@ class EmployeeCRUD:
                                            person_display_name=row[2],
                                            email=row[2],
                                            job_id=row[3],
-                                           job_display_name=row[4])
+                                           job_display_name=row[4],
+                                           is_active=row[5],
+                                           is_verified=row[6],
+                                           is_superuser=row[7]
+                                           )
         return None
 
     async def read_employees_staff_with_id_display_name(self):
@@ -136,7 +150,10 @@ class EmployeeCRUD:
                                                   models.Employee.person_id,
                                                   models.Person.email,
                                                   models.Job.id,
-                                                  models.Job.title
+                                                  models.Job.title,
+                                                  models.Employee.is_active,
+                                                  models.Employee.is_verified,
+                                                  models.Employee.is_superuser
                                                   ).join(models.Person
                                                   ).join(models.Job
                                                   ).where(models.Job.title == cs.STAFF_TITLE)
@@ -148,7 +165,11 @@ class EmployeeCRUD:
                                                   person_display_name=row[2],
                                                   email=row[2],
                                                   job_id=row[3],
-                                                  job_display_name=row[4],))
+                                                  job_display_name=row[4],
+                                                  is_active=row[5],
+                                                  is_verified=row[6],
+                                                  is_superuser=row[7]
+                                                  ))
         return result
 
     async def read_employees_doctor_with_id_display_name(self):
@@ -156,7 +177,10 @@ class EmployeeCRUD:
                                                   models.Employee.person_id,
                                                   models.Person.email,
                                                   models.Job.id,
-                                                  models.Job.title
+                                                  models.Job.title,
+                                                  models.Employee.is_active,
+                                                  models.Employee.is_verified,
+                                                  models.Employee.is_superuser
                                                   ).join(models.Person
                                                   ).join(models.Job
                                                   ).where(models.Job.title == cs.DOCTOR_TITLE)
@@ -168,7 +192,11 @@ class EmployeeCRUD:
                                                   person_display_name=row[2],
                                                   email=row[2],
                                                   job_id=row[3],
-                                                  job_display_name=row[4],))
+                                                  job_display_name=row[4],
+                                                  is_active=row[5],
+                                                  is_verified=row[6],
+                                                  is_superuser=row[7]
+                                                  ,))
         return result
 
 class JobCRUD:
