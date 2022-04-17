@@ -140,11 +140,11 @@ async def read_job(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_cru
 async def read_job_is_assigned(job_id: int, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
     return await crud_helper.read_job_is_assigned(job_id=job_id)
 
-@app.post("/job/", response_model=schemas.JobCreate, status_code=status.HTTP_201_CREATED, tags=["job"])
+@app.post("/job/", response_model=schemas.Job, status_code=status.HTTP_201_CREATED, tags=["job"])
 async def create_job(job: schemas.JobCreate, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
     return await crud_helper.create_job(job=job)
 
-@app.put("/job/{job_id}", response_model=schemas.JobUpdate, tags=["job"])
+@app.put("/job/{job_id}", response_model=schemas.Job, tags=["job"])
 async def update_job(job_id: int, job: schemas.JobUpdate, crud_helper: crud.JobCRUD = Depends(crud.job_crud)):
     return await crud_helper.update_job(job_id=job_id, job=job)
 
@@ -235,14 +235,14 @@ async def read_patient_joined(patient_id: int, crud_helper: crud.PatientCRUD = D
         raise HTTPException(status_code=404, detail="Patient not found")
     return db_patient
 
-@app.post("/patient/", response_model=schemas.PatientCreate, status_code=status.HTTP_201_CREATED, tags=["patient"])
+@app.post("/patient/", response_model=schemas.Patient, status_code=status.HTTP_201_CREATED, tags=["patient"])
 async def create_patient(patient: schemas.PatientCreate, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
     db_patient = await crud_helper.read_patient_by_person_id(patient.person_id)
     if db_patient:
         raise HTTPException(status_code=400, detail="Patient with this person_id already exists")
     return await crud_helper.create_patient(patient=patient)
 
-@app.put("/patient/{patient_id}", response_model=schemas.PatientUpdate, tags=["patient"])
+@app.put("/patient/{patient_id}", response_model=schemas.Patient, tags=["patient"])
 async def update_patient(patient_id: int, patient: schemas.PatientUpdate, crud_helper: crud.PatientCRUD = Depends(crud.patient_crud)):
     db_patient = await crud_helper.read_patient(patient_id)
     if db_patient is None:
