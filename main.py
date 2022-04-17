@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import UUID4
 
 import crud, schemas
+from reports import AvailabilityReport, availability_report
 import constants as cs
 
 from seed_db import spawn_db_seed
@@ -436,3 +437,8 @@ async def delete_appointment(appointment_id: int, crud_helper: crud.AppointmentC
         raise HTTPException(status_code=404, detail="Appointment not found")
     await crud_helper.delete_appointment(appointment_id=appointment_id)
     return db_appointment
+    
+
+@app.get("/reports/availability", tags=["reports"])
+async def availability_report(reports_helper: AvailabilityReport = Depends(availability_report)):
+    return await reports_helper.by_doctor()
