@@ -1,12 +1,13 @@
 import asyncio
 import contextlib
+from random import choice, random
 
 from fastapi_users_db_sqlalchemy import AsyncSession
 from database import SessionLocal
 from models import Appointment, Employee, Job, Patient, Person, Prescription, Unit
 from time import time
 import constants as cs
-import crud as crud
+from crud import AppointmentCRUD
 from faker import Faker
 from schemas import EmployeeCreate
 from fastapi_users.manager import UserAlreadyExists
@@ -90,51 +91,46 @@ def seed_patient(faker):
 
     return seeder
 
-def seed_appointments(faker):
-    def seeder(session):
-        if session.query(Appointment).first() is None:
-            patients = session.query(Patient).all()
-            doctors = session.query(Employee).filter(Employee.job.has(title=cs.DOCTOR_TITLE)).all()
-            doctors = [doctors[i % len(doctors)] for i in range(0, len(patients))]
-            staffs = session.query(Employee).filter(Employee.job.has(title=cs.STAFF_TITLE)).all()
-            staffs = [staffs[i % len(staffs)] for i in range(0, len(patients))]
-            prescriptions = session.query(Prescription).all()
-            prescriptions = [prescriptions[i % len(prescriptions)] for i in range(0, len(patients))]
-            for doctor, staff, patient, prescription in zip(doctors, staffs, patients, prescriptions):
+async def seed_appointments(faker, session: AsyncSession):
+    appointmentCrud = AppointmentCRUD(session)
+
+    appointment = (await session.execute(select(Appointment))).first()
+
+    if appointment is None:
+        patients = (await session.execute(select(Patient))).scalars().all()
+        
+        doctors = (await session.execute(select(Employee).where(Employee.job.has(title=cs.DOCTOR_TITLE)))).scalars().all()
+        doctors = [doctors[i % len(doctors)] for i in range(0, len(patients))]
+        
+        staffs = (await session.execute(select(Employee).where(Employee.job.has(title=cs.STAFF_TITLE)))).scalars().all()
+        staffs = [staffs[i % len(staffs)] for i in range(0, len(patients))]
+        
+        prescriptions = (await session.execute(select(Prescription))).scalars().all()
+        prescriptions = [prescriptions[i % len(prescriptions)] for i in range(0, len(patients))]
+        
+        for doctor, staff, patient, prescription in zip(doctors, staffs, patients, prescriptions):
+        
+            if random() > 0.75:
+                continue
+
+            # find a open date for the given doctor,
+            # SHOULD depend on the time of day currently (can't schedule appointments for the past))
+
+            available_appointments = await appointmentCrud.read_available_appointment_datetimes_by_doctor_id(doctor.id)
             
-                # find a open date for the given doctor,
-                # SHOULD depend on the time of day currently (can't schedule appointments for the past))
-                
-                doctors = select(Employee.id, Person.email).join(Person).join(Job).where(Job.title == cs.DOCTOR_TITLE).cte(name='doctors')
+            
 
-                query = session.execute(select(Appointment.date_and_time
-                                  ).join_from(Appointment, doctors, Appointment.doctor_id == doctors.c.id
-                                  ).where(Appointment.doctor_id == doctor.id)).all()
-
-                doctor_appointment_date_and_times = sorted([tuple_[0] for tuple_ in query])
-                
-                if len(doctor_appointment_date_and_times) < cs.get_number_of_possible_appointments_available_per_one_doctor_per_day():
-                    if doctor_appointment_date_and_times == []:
-                        available_date_and_time = cs.get_todays_opening_datetime()
-                    else:
-                        available_date_and_time = doctor_appointment_date_and_times[-1] + cs.APPOINTMENT_LENGTH_TIME_DELTA
-                        
-                        if cs.get_todays_starting_lunch_time_datetime() <= available_date_and_time < cs.get_todays_ending_lunch_time_datetime():
-                            available_date_and_time = cs.get_todays_ending_lunch_time_datetime()     
-                
-                session.add(Appointment(doctor_id=doctor.id,
-                                        patient_id=patient.id,
-                                        staff_id=staff.id,
-                                        prescription_id=prescription.id,
-                                        date_and_time=available_date_and_time,
-                                        comments=faker.sentence(),
-                                        )
-                            )
-                
-                # should commit one by one to ensure that the appointments aren't repeated
-                session.commit()
-
-    return seeder
+            session.add(Appointment(doctor_id=doctor.id,
+                                    patient_id=patient.id,
+                                    staff_id=staff.id,
+                                    prescription_id=prescription.id,
+                                    date_and_time=choice(available_appointments),
+                                    comments=faker.sentence(),
+                                    )
+                        )
+            
+            # should commit one by one to ensure that the appointments aren't repeated
+        await session.commit()
 
 async def spawn_db_seed():
     async with get_async_session_context() as session:
@@ -191,4 +187,4 @@ async def seed_database(session: AsyncSession, user_manager: UserManager):
                        f'available for the number of patients ({cs.INIT_NUM_PATIENTS}) today')
 
     
-    await session.run_sync(seed_appointments(faker))
+    await seed_appointments(faker, session)

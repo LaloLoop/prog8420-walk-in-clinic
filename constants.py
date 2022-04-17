@@ -2,6 +2,7 @@ import datetime
 from datetime import timedelta, timezone
 import math
 from pathlib import Path
+from random import choice
 from sre_parse import SPECIAL_CHARS
 from openpyxl import load_workbook
 from models import Appointment, Employee, Job
@@ -46,9 +47,10 @@ STAFF_SPECIALTIES = ['receptionist', 'nurse', 'health worker', 'pharmacist', 'th
 DOCTOR_SPECIALTIES = ['general', 'pediatrics', 'cardiology', 'dermatology', 'neurology', 'obstetrics']
 JOB_SPECIALTIES =   ADMIN_SPECIALTIES[0:NUM_ADMIN] + \
                     STAFF_SPECIALTIES[0:NUM_STAFF] + \
-                    DOCTOR_SPECIALTIES[0:NUM_DOCTORS]
+                    DOCTOR_SPECIALTIES[0:NUM_DOCTORS] + \
+                    [choice(DOCTOR_SPECIALTIES) for i in range(NUM_DOCTORS - len(DOCTOR_SPECIALTIES))]
                     
-INIT_NUM_PATIENTS = 60
+INIT_NUM_PATIENTS = 49
 NUM_PRESCRIPTIONS = INIT_NUM_PATIENTS
 
 UNIT_NAMES = ['mg','mL','g','oz']
