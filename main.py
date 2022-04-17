@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Response, status
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,6 +13,8 @@ import constants as cs
 
 from seed_db import spawn_db_seed
 from users import auth_backend, create_db_and_tables, current_active_user, fastapi_users
+
+from graphs import appointment_graphs, AppointmentGraphs
 
 app = FastAPI()
 
@@ -442,3 +444,9 @@ async def delete_appointment(appointment_id: int, crud_helper: crud.AppointmentC
 @app.get("/reports/availability", tags=["reports"])
 async def availability_report(reports_helper: AvailabilityReport = Depends(availability_report)):
     return await reports_helper.by_doctor()
+
+@app.get("/graphs/availability", tags=["graphs"])
+async def daily_availability_graph(graphs_helper: AppointmentGraphs = Depends(appointment_graphs)):
+    buf = await graphs_helper.availability()
+
+    return Response(content=buf.read(), media_type="image/png")
