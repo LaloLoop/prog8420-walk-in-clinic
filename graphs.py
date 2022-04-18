@@ -64,7 +64,7 @@ class AppointmentGraphs:
         plt.legend(loc='upper left')
         
         buf = BytesIO()
-        plt.savefig(buf, format="png")
+        plt.savefig(buf, format="png", bbox_inches="tight")
         buf.seek(0)
 
         return buf
