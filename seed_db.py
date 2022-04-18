@@ -114,12 +114,8 @@ async def seed_appointments(faker, session: AsyncSession):
                 continue
 
             # find a open date for the given doctor,
-            # SHOULD depend on the time of day currently (can't schedule appointments for the past))
-
             available_appointments = await appointmentCrud.read_available_appointment_datetimes_by_doctor_id(doctor.id)
             
-            
-
             session.add(Appointment(doctor_id=doctor.id,
                                     patient_id=patient.id,
                                     staff_id=staff.id,
@@ -129,7 +125,6 @@ async def seed_appointments(faker, session: AsyncSession):
                                     )
                         )
             
-            # should commit one by one to ensure that the appointments aren't repeated
         await session.commit()
 
 async def spawn_db_seed():
