@@ -10,19 +10,6 @@ from fastapi_users import models
 
 import constants as cs
 
-# https://stackabuse.com/python-validate-email-address-with-regular-expressions-regex/
-email_regex = re.compile(r"([-!#-'*+/-9=?A-Z^-~]+(\.[-!#-'*+/-9=?A-Z^-~]+)*|\"([]!#-[^-~ \t]|(\\[\t -~]))+\")@([-!#-'*+/-9=?A-Z^-~]+(\.[-!#-'*+/-9=?A-Z^-~]+)*|\[[\t -Z^-~]*])")
-
-def check_valid_email(email):
-    '''returns a Tuple of (boolean, string):
-    - (True, email) or 
-    - (False, error message) 
-    '''
-    if re.fullmatch(email_regex, email):
-        return (True, email)
-    else:
-        return (False, "Invalid email")
-        
 # taken from https://stackoverflow.com/a/47802790
 def check_canadian_postalcode(p, strictCapitalization=False, fixSpace=True):
     '''returns a Tuple of (boolean, string):
@@ -88,8 +75,8 @@ class PersonBase(BaseModel):
     
     @validator('first_name', 'last_name')
     def string_must_be_alphabetic(cls, v):
-        if not re.match(r"\w+", v):
-            raise ValueError(f'{v} must have alphabetic characters')
+        if not re.match(r"^[A-Za-z ]*$", v):
+            raise ValueError(f'{v} must have alphabetic (space allowed) characters')
         return v
     
     @validator('birthdate')
@@ -110,16 +97,10 @@ class PersonBase(BaseModel):
             raise ValueError(f'{v} must not be older than 120 years')
         return v
     
-    @validator('street')
-    def street_must_be_alphanumeric(cls, v):
-        if not re.match(r"[A-Za-z0-9 ,.]*", v):
-            raise ValueError(f'{v} must be alphanumeric')
-        return v
-
-    @validator('city')
-    def city_must_be_alphanumeric(cls, v):
-        if not re.match(r"[A-Za-z0-9 ,.]*", v):
-            raise ValueError(f'{v} must be alphanumeric')
+    @validator('city, street')
+    def must_be_alphanumeric(cls, v):
+        if not re.match(r"^[A-Za-z0-9. ]*$", v):
+            raise ValueError(f'{v} must be alphanumeric (period and space allowed)')
         return v
     
     @validator('province')
@@ -139,10 +120,11 @@ class PersonBase(BaseModel):
    
     @validator('email')
     def email_must_be_valid(cls, v):
-        valid, v_or_msg = check_valid_email(v)
+        regex = '^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'  
+        valid = re.search(regex, v)
         if not valid:
-            raise ValueError(f'{v_or_msg}')
-        return v_or_msg
+            raise ValueError('Email must be valid, i.e. aa@b.cc')
+        return valid
     
     # https://www.tripadvisor.ca/Travel-g153339-s605/Canada:Telephones.html
     @validator('phone_number')
