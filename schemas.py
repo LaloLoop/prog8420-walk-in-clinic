@@ -89,7 +89,7 @@ class PersonBase(BaseModel):
     @validator('first_name', 'last_name')
     def string_must_be_alphabetic(cls, v):
         if not re.match(r"\w+", v):
-            raise ValueError(f'{v} must have alphanumeric characters')
+            raise ValueError(f'{v} must have alphabetic characters')
         return v
     
     @validator('birthdate')
@@ -112,13 +112,13 @@ class PersonBase(BaseModel):
     
     @validator('street')
     def street_must_be_alphanumeric(cls, v):
-        if not re.match(r"[A-Za-z0-9 ,]*", v):
+        if not re.match(r"[A-Za-z0-9 ,.]*", v):
             raise ValueError(f'{v} must be alphanumeric')
         return v
 
     @validator('city')
     def city_must_be_alphanumeric(cls, v):
-        if not re.match(r"[A-Za-z0-9 ,]*", v):
+        if not re.match(r"[A-Za-z0-9 ,.]*", v):
             raise ValueError(f'{v} must be alphanumeric')
         return v
     
@@ -155,7 +155,7 @@ class PersonBase(BaseModel):
                 if num_digits_found == 7:
                     return v
             
-        if len(num_digits_found) < 7:
+        if num_digits_found < 7:
             raise ValueError(f'{v} must contain at least 7 digits')
         return v
     

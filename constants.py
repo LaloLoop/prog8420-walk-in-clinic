@@ -24,7 +24,7 @@ FAKER_LOCALE = 'en_CA'
 FAKER_SEED = 34003
 
 STRICT_POSTAL_CODE_CAPITALIZATION = False
-FIX_SPACE_IN_POSTAL_CODE = True
+FIX_SPACE_IN_POSTAL_CODE = False
 
 # https://en.wikipedia.org/wiki/List_of_Special_Characters_for_Passwords
 SPECIAL_CHARS_ALLOWED_IN_PASSWORD_XLSX_FILENAME = 'Wikipedia_List_of_Special_Characters_for_Passwords.xlsx'
