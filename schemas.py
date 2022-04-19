@@ -97,7 +97,7 @@ class PersonBase(BaseModel):
             raise ValueError(f'{v} must not be older than 150 years')
         return v
     
-    @validator('city, street')
+    @validator('city', 'street')
     def must_be_alphanumeric(cls, v):
         if not re.match(r"^[A-Za-z0-9. ]*$", v):
             raise ValueError(f'{v} must be alphanumeric (period and space allowed)')

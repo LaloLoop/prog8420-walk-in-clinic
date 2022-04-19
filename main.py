@@ -95,14 +95,14 @@ async def read_person(person_id: int, crud_helper: crud.PersonCRUD = Depends(cru
 async def read_person_is_assigned(person_id: int, crud_helper: crud.PersonCRUD = Depends(crud.person_crud)):
     return await crud_helper.read_person_is_assigned(person_id=person_id)
 
-@app.post("/person/", response_model=schemas.PersonCreate, status_code=status.HTTP_201_CREATED, tags=["person"])
+@app.post("/person/", response_model=schemas.Person, status_code=status.HTTP_201_CREATED, tags=["person"])
 async def create_person(person: schemas.PersonCreate, crud_helper: crud.PersonCRUD = Depends(crud.person_crud)):
     db_person = await crud_helper.read_person_by_email(person.email)
     if db_person:
         raise HTTPException(status_code=400, detail="Person with this email already exists")
     return await crud_helper.create_person(person=person)
 
-@app.put("/person/{person_id}", response_model=schemas.PersonUpdate, tags=["person"])
+@app.put("/person/{person_id}", response_model=schemas.Person, tags=["person"])
 async def update_person(person_id: int, person: schemas.PersonUpdate, crud_helper: crud.PersonCRUD = Depends(crud.person_crud)):
     db_person = await crud_helper.read_person(person_id)
     if db_person is None:
@@ -279,14 +279,14 @@ async def read_unit(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.unit
 async def read_unit_is_assigned(unit_id: int, crud_helper: crud.UnitCRUD = Depends(crud.unit_crud)):
     return await crud_helper.read_unit_is_assigned(unit_id=unit_id)
 
-@app.post("/unit/", response_model=schemas.UnitCreate, status_code=status.HTTP_201_CREATED, tags=["unit"])
+@app.post("/unit/", response_model=schemas.Unit, status_code=status.HTTP_201_CREATED, tags=["unit"])
 async def create_unit(unit: schemas.UnitCreate, crud_helper: crud.UnitCRUD = Depends(crud.unit_crud)):
     db_unit = await crud_helper.read_unit_by_name(unit.name)
     if db_unit:
         raise HTTPException(status_code=400, detail="Unit with this name already exists")
     return await crud_helper.create_unit(unit=unit)
 
-@app.put("/unit/{unit_id}", response_model=schemas.UnitUpdate, tags=["unit"])
+@app.put("/unit/{unit_id}", response_model=schemas.Unit, tags=["unit"])
 async def update_unit(unit_id: int, unit: schemas.UnitUpdate, crud_helper: crud.UnitCRUD = Depends(crud.unit_crud)):
     db_unit = await crud_helper.read_unit(unit_id)
     if db_unit is None:
@@ -336,14 +336,14 @@ async def read_prescription_joined(prescription_id: int, crud_helper: crud.Presc
     return db_prescription
 
 
-@app.post("/prescription/", response_model=schemas.PrescriptionCreate, status_code=status.HTTP_201_CREATED, tags=["prescription"])
+@app.post("/prescription/", response_model=schemas.Prescription, status_code=status.HTTP_201_CREATED, tags=["prescription"])
 async def create_prescription(prescription: schemas.PrescriptionCreate, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
     db_prescription = await crud_helper.read_prescription_by_name(prescription.medication)
     if db_prescription:
         raise HTTPException(status_code=400, detail="Prescription with this name already exists")
     return await crud_helper.create_prescription(prescription=prescription)
 
-@app.put("/prescription/{prescription_id}", response_model=schemas.PrescriptionUpdate, tags=["prescription"])
+@app.put("/prescription/{prescription_id}", response_model=schemas.Prescription, tags=["prescription"])
 async def update_prescription(prescription_id: int, prescription: schemas.PrescriptionUpdate, crud_helper: crud.PrescriptionCRUD = Depends(crud.prescription_crud)):
     db_prescription = await crud_helper.read_prescription(prescription_id)
     if db_prescription is None:
@@ -418,14 +418,14 @@ async def read_appointment_by_prescription_id_with_id_display_name(prescription_
         raise HTTPException(status_code=404, detail="Appointments not found")
     return db_appointments
 
-@app.post("/appointment/", response_model=schemas.AppointmentCreate, status_code=status.HTTP_201_CREATED, tags=["appointment"])
+@app.post("/appointment/", response_model=schemas.Appointment, status_code=status.HTTP_201_CREATED, tags=["appointment"])
 async def create_appointment(appointment: schemas.AppointmentCreate, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
     db_appointment = await crud_helper.read_appointment_by_patient_id(appointment.patient_id)
     if db_appointment:
         raise HTTPException(status_code=400, detail="Appointment with this patient already exists")
     return await crud_helper.create_appointment(appointment=appointment)
 
-@app.put("/appointment/{appointment_id}", response_model=schemas.AppointmentUpdate, tags=["appointment"])
+@app.put("/appointment/{appointment_id}", response_model=schemas.Appointment, tags=["appointment"])
 async def update_appointment(appointment_id: int, appointment: schemas.AppointmentUpdate, crud_helper: crud.AppointmentCRUD = Depends(crud.appointment_crud)):
     db_appointment = await crud_helper.read_appointment(appointment_id)
     if db_appointment is None:
