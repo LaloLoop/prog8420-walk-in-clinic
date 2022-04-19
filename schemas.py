@@ -92,9 +92,9 @@ class PersonBase(BaseModel):
         return v
     
     @validator('birthdate')
-    def birthdate_must_not_be_older_than_120_years(cls, v):
+    def birthdate_must_not_be_older_than_150_years(cls, v):
         if v < date.today() - datetime.timedelta(days=120*365):
-            raise ValueError(f'{v} must not be older than 120 years')
+            raise ValueError(f'{v} must not be older than 150 years')
         return v
     
     @validator('city, street')
@@ -167,8 +167,8 @@ class JobBase(BaseModel):
     # TODO: allow adding new/different specialties 
     @validator('speciality')
     def speciality_must_be_no_more_than_50_characters(cls, v):
-        if len(v) > 50:
-            raise ValueError(f'{v} must be no more than 50 characters')
+        if len(v) > 50 or len(v) == 0:
+            raise ValueError(f'{v} must be no more than 50 characters, and not empty')
         return v
     
 class JobCreate(JobBase):
