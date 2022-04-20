@@ -100,4 +100,3 @@ Follow the instructions in [this article](https://exerror.com/error-command-erro
 -  Melika Jahanbani ([mell122](https://github.com/mell122))
 -  Marcus Diemand ([mjdi](https://github.com/mjdi))
 -  Eduardo Gutierrez Silva ([LaloLoop](https://github.com/LaloLoop))
-
