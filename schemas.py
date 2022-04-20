@@ -124,7 +124,7 @@ class PersonBase(BaseModel):
         valid = re.search(regex, v)
         if not valid:
             raise ValueError('Email must be valid, i.e. aa@b.cc')
-        return valid
+        return valid.group(0)
     
     # https://www.tripadvisor.ca/Travel-g153339-s605/Canada:Telephones.html
     @validator('phone_number')
@@ -166,9 +166,9 @@ class JobBase(BaseModel):
    
     # TODO: allow adding new/different specialties 
     @validator('speciality')
-    def speciality_must_be_no_more_than_50_characters(cls, v):
-        if len(v) > 50 or len(v) == 0:
-            raise ValueError(f'{v} must be no more than 50 characters, and not empty')
+    def speciality_must_be_between_1_and_50_characters(cls, v):
+        if not( 1 <= len(v) <= 50 ):
+            raise ValueError(f'{v} must be between 1 and 50 characters')
         return v
     
 class JobCreate(JobBase):
@@ -360,9 +360,9 @@ class UnitBase(BaseModel):
     name: str
     
     @validator('name')
-    def name_must_be_less_than_100_characters(cls, v):
-        if len(v) > 100:
-            raise ValueError(f'{v} must be less than 100 characters')
+    def name_must_be_betwwen_1_and_10_characters_long(cls, v):
+        if not (1 <= len(v) <= 10):
+            raise ValueError(f'{v} must be between 1 and 10 characters long')
         return v
     
 class UnitCreate(UnitBase):

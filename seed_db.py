@@ -35,13 +35,18 @@ def seed_person(faker):
     def seeder(session):
         if session.query(Person).first() is None:
             for i in range(0, len(cs.JOB_TITLES) + cs.INIT_NUM_PATIENTS):
+                
+                postcode = faker.postcode()
+                if len(postcode) == 6:
+                    postcode = postcode[:3] + ' ' + postcode[3:]
+                    
                 session.add(Person(first_name=faker.first_name(),
                                 last_name=faker.last_name(),
                                 birthdate=faker.date_of_birth(),
                                 street=faker.street_address(),
                                 city=faker.city(),
                                 province=cs.PROVINCES[faker.random_int(min=0, max=len(cs.PROVINCES) - 1)],
-                                postalcode=faker.postcode(),
+                                postalcode=postcode,
                                 email=faker.email(),
                                 phone_number=faker.phone_number(),
                                 )

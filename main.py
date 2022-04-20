@@ -108,7 +108,7 @@ async def update_person(person_id: int, person: schemas.PersonUpdate, crud_helpe
     if db_person is None:
         raise HTTPException(status_code=404, detail="Person not found")
     db_person = await crud_helper.read_person_by_email(person.email)
-    if db_person.id != person_id and db_person:
+    if db_person and db_person.id != person_id:
         raise HTTPException(status_code=400, detail="Person with this email already exists")
     return await crud_helper.update_person(person_id=person_id, person=person)
 
@@ -292,7 +292,7 @@ async def update_unit(unit_id: int, unit: schemas.UnitUpdate, crud_helper: crud.
     if db_unit is None:
         raise HTTPException(status_code=404, detail="Unit not found")
     db_unit = await crud_helper.read_unit_by_name(unit.name)
-    if db_unit.id != unit_id and db_unit:
+    if db_unit and db_unit.id != unit_id:
         raise HTTPException(status_code=400, detail="Unit with this name already exists")
     return await crud_helper.update_unit(unit_id=unit_id, unit=unit)
 
