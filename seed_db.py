@@ -43,7 +43,7 @@ def seed_person(faker):
                 firstname = faker.first_name()
                 lastname = faker.last_name()
                 
-                email = firstname[0:1].lower() + lastname.lower() + '@' + 'gmail.com'
+                email = firstname[0:3].lower() + lastname.lower() + '@' + 'gmail.com'
                     
                 session.add(Person(first_name=firstname,
                                 last_name=lastname,
