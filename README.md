@@ -58,10 +58,21 @@ The above will launch the frontend and make it accessible in [http://localhost:3
 
 ## Accessing the project
 
-The default users are populated once the server is started, and you can see temporary credentials in the logs of the application. The default login for the admin is:
+The default users are populated once the server is started, and you can see temporary credentials in the logs of the application. 
 
-* Usernme: `gbuchanan@example.net`
+The default logins for the admin, a staff, and a doctor are:
+
+* admin
+* Username: `derbuchanan@example.net`
 * Password: `admin`
+
+* staff
+* Username: `allduran@gmail.com`
+* Password: `u^3Xm@opC_`
+
+* doctor
+* Username: `chrfloyd@gmail.com`
+* Password: `*a)BANYr*2`
 
 ## Troubleshooting
 
