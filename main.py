@@ -8,13 +8,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import UUID4
 
 import crud, schemas
-from reports import AvailabilityReport, availability_report
+from reports import AvailabilityReport, EntityCountReport, PersonBreakdownReport, TimeslotUsageReport, \
+                    availability_report, entity_count_report, person_breakdown_report, timeslot_usage_report
 import constants as cs
 
 from seed_db import spawn_db_seed
 from users import auth_backend, create_db_and_tables, current_active_user, fastapi_users
 
-from graphs import appointment_graphs, AppointmentGraphs
+from graphs import AppointmentGraphs, EntityCountGraphs, PersonBreakdownGraphs, TimeslotUsageGraphs, \
+                    appointment_graphs, entity_count_graphs, person_breakdown_graphs, timeslot_usage_graphs
 
 app = FastAPI()
 
@@ -445,8 +447,45 @@ async def delete_appointment(appointment_id: int, crud_helper: crud.AppointmentC
 async def availability_report(reports_helper: AvailabilityReport = Depends(availability_report)):
     return await reports_helper.by_doctor()
 
-@app.get("/graphs/availability", tags=["graphs"])
-async def daily_availability_graph(graphs_helper: AppointmentGraphs = Depends(appointment_graphs)):
+@app.get("/reports/entity-count", tags=["reports"])
+async def entity_count_report(reports_helper: EntityCountReport = Depends(entity_count_report)):
+    return await reports_helper.entity_counts()
+
+@app.get("/reports/person-breakdown", tags=["reports"])
+async def person_breakdown_report(reports_helper: PersonBreakdownReport = Depends(person_breakdown_report)):
+    return await reports_helper.person_breakdown()
+
+@app.get("/reports/timeslot-usage", tags=["reports"])
+async def time_usage_report(reports_helper: TimeslotUsageReport = Depends(timeslot_usage_report)):
+    return await reports_helper.timeslot_percent_usage()
+
+
+
+@app.get("/graphs/availability/{random_int}", tags=["graphs"])
+async def daily_availability_graph(random_int: int, graphs_helper: AppointmentGraphs = Depends(appointment_graphs)):
+    # ignore random_int path param, it's just used to avoid a cached version of the graph in browser
     buf = await graphs_helper.availability()
+
+    return Response(content=buf.read(), media_type="image/png")
+
+@app.get("/graphs/entity-count/{random_int}", tags=["graphs"])
+async def entity_count_graph(random_int: int, graphs_helper: EntityCountGraphs = Depends(entity_count_graphs)):
+    # ignore random_int path param, it's just used to avoid a cached version of the graph in browser
+    buf = await graphs_helper.entity_count()
+    
+    return Response(content=buf.read(), media_type="image/png")
+    
+    
+@app.get("/graphs/person-breakdown/{random_int}", tags=["graphs"])
+async def person_breakdown_graph(random_int: int, graphs_helper: PersonBreakdownGraphs = Depends(person_breakdown_graphs)):
+    # ignore random_int path param, it's just used to avoid a cached version of the graph in browser
+    buf = await graphs_helper.person_breakdown()
+
+    return Response(content=buf.read(), media_type="image/png")
+
+@app.get('/graphs/timeslot-usage/{random_int}', tags=["graphs"])
+async def time_usage_graph(random_int: int, graphs_helper: TimeslotUsageGraphs = Depends(timeslot_usage_graphs)):
+    # ignore random_int path param, it's just used to avoid a cached version of the graph in browser
+    buf = await graphs_helper.timeslot_percent_usage()
 
     return Response(content=buf.read(), media_type="image/png")

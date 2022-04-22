@@ -40,14 +40,19 @@ def seed_person(faker):
                 if len(postcode) == 6:
                     postcode = postcode[:3] + ' ' + postcode[3:]
                     
-                session.add(Person(first_name=faker.first_name(),
-                                last_name=faker.last_name(),
+                firstname = faker.first_name()
+                lastname = faker.last_name()
+                
+                email = firstname[0:1].lower() + lastname.lower() + '@' + 'gmail.com'
+                    
+                session.add(Person(first_name=firstname,
+                                last_name=lastname,
                                 birthdate=faker.date_of_birth(),
                                 street=faker.street_address(),
                                 city=faker.city(),
                                 province=cs.PROVINCES[faker.random_int(min=0, max=len(cs.PROVINCES) - 1)],
                                 postalcode=postcode,
-                                email=faker.email(),
+                                email=email,
                                 phone_number=faker.phone_number(),
                                 )
                             )  
